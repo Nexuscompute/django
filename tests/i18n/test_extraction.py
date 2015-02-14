@@ -177,14 +177,14 @@ class BasicExtractorTests(ExtractorTests):
         self.assertTrue(os.path.exists(self.PO_FILE))
         with open(self.PO_FILE, 'r') as fp:
             po_contents = force_text(fp.read())
-            self.assertMsgId('Literal with a percent symbol at the end %%', po_contents)
-            self.assertMsgId('Literal with a percent %% symbol in the middle', po_contents)
-            self.assertMsgId('Completed 50%% of all the tasks', po_contents)
-            self.assertMsgId('Completed 99%% of all the tasks', po_contents)
+            self.assertMsgId('Literal with a percent symbol at the end %', po_contents)
+            self.assertMsgId('Literal with a percent % symbol in the middle', po_contents)
+            self.assertMsgId('Completed 50% of all the tasks', po_contents)
+            self.assertMsgId('Completed 99% of all the tasks', po_contents)
             self.assertMsgId("Shouldn't double escape this sequence: %% (two percent signs)", po_contents)
             self.assertMsgId("Shouldn't double escape this sequence %% either", po_contents)
-            self.assertMsgId("Looks like a str fmt spec %%s but shouldn't be interpreted as such", po_contents)
-            self.assertMsgId("Looks like a str fmt spec %% o but shouldn't be interpreted as such", po_contents)
+            self.assertMsgId("Looks like a str fmt spec %s but shouldn't be interpreted as such", po_contents)
+            self.assertMsgId("Looks like a str fmt spec % o but shouldn't be interpreted as such", po_contents)
 
     def test_templatize_blocktrans_tag(self):
         # ticket #11966
@@ -208,8 +208,8 @@ class BasicExtractorTests(ExtractorTests):
             # should be trimmed
             self.assertMsgId("Again some text with a few line breaks, this time should be trimmed.", po_contents)
         # #21406 -- Should adjust for eaten line numbers
-        self.assertMsgId("I'm on line 97", po_contents)
-        self.assertLocationCommentPresent(self.PO_FILE, 97, 'templates', 'test.html')
+        self.assertMsgId("I'm on line 101", po_contents)
+        self.assertLocationCommentPresent(self.PO_FILE, 101, 'templates', 'test.html')
 
     def test_force_en_us_locale(self):
         """Value of locale-munging option used by the command is the right one"""

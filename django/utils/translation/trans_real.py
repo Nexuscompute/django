@@ -661,7 +661,6 @@ def templatize(src, origin=None):
                         g = g.strip('"')
                     elif g[0] == "'":
                         g = g.strip("'")
-                    g = one_percent_re.sub('%%', g)
                     if imatch.group(2):
                         # A context is provided
                         context_match = context_re.match(imatch.group(2))

@@ -17,14 +17,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#, python-format
-msgid "Completed 50%% of all the tasks"
-msgstr "IT translation of Completed 50%% of all the tasks"
+#, no-python-format
+msgid "Completed 50% of all the tasks"
+msgstr "IT translation of Completed 50% of all the tasks"
 
-#, python-format
-msgid "Looks like a str fmt spec %%s but shouldn't be interpreted as such"
+#, no-python-format
+msgid "Looks like a str fmt spec %s but shouldn't be interpreted as such"
 msgstr "Translation of the above string"
 
-#, python-format
-msgid "Looks like a str fmt spec %% o but shouldn't be interpreted as such"
-msgstr "IT translation contains %% for the above string"
+#, no-python-format
+msgid "Looks like a str fmt spec % o but shouldn't be interpreted as such"
+msgstr "IT translation contains % for the above string"

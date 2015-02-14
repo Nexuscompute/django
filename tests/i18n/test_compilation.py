@@ -97,13 +97,13 @@ class PercentRenderingTests(MessageCompilationTests):
             from django.template import Template, Context
             call_command('compilemessages', locale=[self.LOCALE], stdout=StringIO())
             with translation.override(self.LOCALE):
-                t = Template('{% load i18n %}{% trans "Looks like a str fmt spec %% o but shouldn\'t be interpreted as such" %}')
+                t = Template('{% load i18n %}{% trans "Looks like a str fmt spec % o but shouldn\'t be interpreted as such" %}')
                 rendered = t.render(Context({}))
-                self.assertEqual(rendered, 'IT translation contains %% for the above string')
+                self.assertEqual(rendered, 'IT translation contains % for the above string')
 
-                t = Template('{% load i18n %}{% trans "Completed 50%% of all the tasks" %}')
+                t = Template('{% load i18n %}{% trans "Completed 50% of all the tasks" %}')
                 rendered = t.render(Context({}))
-                self.assertEqual(rendered, 'IT translation of Completed 50%% of all the tasks')
+                self.assertEqual(rendered, 'IT translation of Completed 50% of all the tasks')
 
 
 class MultipleLocaleCompilationTests(MessageCompilationTests):
