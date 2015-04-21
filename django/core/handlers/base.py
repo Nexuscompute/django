@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 
+import inspect
 import logging
 import sys
 import types
+import warnings
 
 from django import http
 from django.conf import settings
@@ -13,6 +15,7 @@ from django.core.exceptions import (
 from django.db import connections, transaction
 from django.http.multipartparser import MultiPartParserError
 from django.utils import six
+from django.utils.deprecation import RemovedInDjango21Warning
 from django.utils.encoding import force_text
 from django.utils.module_loading import import_string
 from django.views import debug
@@ -80,10 +83,21 @@ class BaseHandler(object):
                 view = transaction.atomic(using=db.alias)(view)
         return view
 
-    def get_exception_response(self, request, resolver, status_code):
+    def get_exception_response(self, request, resolver, status_code, exception):
         try:
             callback, param_dict = resolver.resolve_error_handler(status_code)
-            response = callback(request, **param_dict)
+            # Unfortunately, inspect.getargspec result is not trustable enough
+            # depending on the callback wrapping in decorators (frequent for handlers).
+            # Falling back on try/except:
+            try:
+                response = callback(request, **dict(param_dict, exception=exception))
+            except TypeError:
+                warnings.warn(
+                    "Error handlers should accept an exception parameter, update "
+                    "your code as this parameter will be required in Django 2.1",
+                    RemovedInDjango21Warning, stacklevel=2
+                )
+                response = callback(request, **param_dict)
         except:
             signals.got_request_exception.send(sender=self.__class__, request=request)
             response = self.handle_uncaught_exception(request, resolver, sys.exc_info())
@@ -162,42 +176,42 @@ class BaseHandler(object):
                             % (middleware_method.__self__.__class__.__name__))
                 response = response.render()
 
-        except http.Http404 as e:
+        except http.Http404 as exc:
             logger.warning('Not Found: %s', request.path,
                         extra={
                             'status_code': 404,
                             'request': request
                         })
             if settings.DEBUG:
-                response = debug.technical_404_response(request, e)
+                response = debug.technical_404_response(request, exc)
             else:
-                response = self.get_exception_response(request, resolver, 404)
+                response = self.get_exception_response(request, resolver, 404, exc)
 
-        except PermissionDenied:
+        except PermissionDenied as exc:
             logger.warning(
                 'Forbidden (Permission denied): %s', request.path,
                 extra={
                     'status_code': 403,
                     'request': request
                 })
-            response = self.get_exception_response(request, resolver, 403)
+            response = self.get_exception_response(request, resolver, 403, exc)
 
-        except MultiPartParserError:
+        except MultiPartParserError as exc:
             logger.warning(
                 'Bad request (Unable to parse request body): %s', request.path,
                 extra={
                     'status_code': 400,
                     'request': request
                 })
-            response = self.get_exception_response(request, resolver, 400)
+            response = self.get_exception_response(request, resolver, 400, exc)
 
-        except SuspiciousOperation as e:
+        except SuspiciousOperation as exc:
             # The request logger receives events for any problematic request
             # The security logger receives events for all SuspiciousOperations
             security_logger = logging.getLogger('django.security.%s' %
-                            e.__class__.__name__)
+                            exc.__class__.__name__)
             security_logger.error(
-                force_text(e),
+                force_text(exc),
                 extra={
                     'status_code': 400,
                     'request': request
@@ -205,7 +219,7 @@ class BaseHandler(object):
             if settings.DEBUG:
                 return debug.technical_500_response(request, *sys.exc_info(), status_code=400)
 
-            response = self.get_exception_response(request, resolver, 400)
+            response = self.get_exception_response(request, resolver, 400, exc)
 
         except SystemExit:
             # Allow sys.exit() to actually exit. See tickets #1023 and #4701

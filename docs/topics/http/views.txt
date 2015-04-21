@@ -141,6 +141,11 @@ but can easily be overridden if you need any custom behavior. Simply specify
 the handlers as seen below in your URLconf (setting them anywhere else will
 have no effect).
 
+.. versionchanged:: 1.9
+
+    The signature of 40x error handlers changed in Django 1.9. Those handlers
+    should accept a second parameter: the exception that triggered the error.
+
 The :func:`~django.views.defaults.page_not_found` view is overridden by
 :data:`~django.conf.urls.handler404`::
 
