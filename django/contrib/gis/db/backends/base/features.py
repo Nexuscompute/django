@@ -37,7 +37,7 @@ class BaseSpatialFeatures(object):
     supports_distances_lookups = True
     supports_left_right_lookups = False
 
-    # Does the database have raster suport?
+    # Does the database have raster support?
     supports_raster = False
 
     @property

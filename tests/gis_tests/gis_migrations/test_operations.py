@@ -96,7 +96,7 @@ class OperationTests(TransactionTestCase):
 
     def test_add_geom_field(self):
         """
-        Tests the AddField operation with a geometry-enabled column.
+        Test the AddField operation with a geometry-enabled column.
         """
         self.alter_gis_model(migrations.AddField, 'Neighborhood',
             'path', False, fields.LineStringField)
@@ -113,7 +113,7 @@ class OperationTests(TransactionTestCase):
     @skipUnlessDBFeature("supports_raster")
     def test_add_raster_field(self):
         """
-        Tests the AddField operation with a raster-enabled column.
+        Test the AddField operation with a raster-enabled column.
         """
         self.alter_gis_model(migrations.AddField, 'Neighborhood',
             'heatmap', False, fields.RasterField)
@@ -126,14 +126,14 @@ class OperationTests(TransactionTestCase):
     @skipIfDBFeature("supports_raster")
     def test_create_raster_model_on_db_without_raster_support(self):
         """
-        Tests creating a model with a raster field on a db without raster support.
+        Test creating a model with a raster field on a db without raster support.
         """
         self.assertRaises(ImproperlyConfigured, self.set_up_test_model, True)
 
     @skipIfDBFeature("supports_raster")
     def test_add_raster_field_on_db_without_raster_support(self):
         """
-        Tests adding a raster field on a db without raster support.
+        Test adding a raster field on a db without raster support.
         """
         self.assertRaises(ImproperlyConfigured, self.alter_gis_model, *(
             migrations.AddField,
@@ -174,7 +174,7 @@ class OperationTests(TransactionTestCase):
 
     def test_remove_geom_field(self):
         """
-        Tests the RemoveField operation with a geometry-enabled column.
+        Test the RemoveField operation with a geometry-enabled column.
         """
         self.alter_gis_model(migrations.RemoveField, 'Neighborhood', 'geom')
         self.assertColumnNotExists("gis_neighborhood", "geom")
@@ -186,7 +186,7 @@ class OperationTests(TransactionTestCase):
     @skipUnlessDBFeature("supports_raster")
     def test_remove_raster_field(self):
         """
-        Tests the RemoveField operation with a raster-enabled column.
+        Test the RemoveField operation with a raster-enabled column.
         """
         self.alter_gis_model(migrations.RemoveField, 'Neighborhood', 'rast')
         self.assertColumnNotExists("gis_neighborhood", "rast")

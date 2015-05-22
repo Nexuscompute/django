@@ -203,10 +203,7 @@ class PostGISOperations(BaseSpatialOperations, DatabaseOperations):
 
     def geo_db_type(self, f):
         """
-        Return the database field type for the given spatial field. For
-        geometries, this is typically `None` because geometry columns are
-        added via the `AddGeometryColumn` stored procedure, unless the field
-        has been specified to be of geography type instead.
+        Return the database field type for the given spatial field.
         """
         if f.geom_type == 'RASTER':
             return 'raster'

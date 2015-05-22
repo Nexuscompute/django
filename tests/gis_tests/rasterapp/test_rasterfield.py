@@ -12,14 +12,17 @@ class RasterFieldTest(TransactionTestCase):
     available_apps = ['gis_tests.rasterapp']
 
     def test_field_null_value(self):
-        "Testing creating model where the RasterField has value null."
-        # Create model instance with Null value
+        """
+        Test creating a model where the RasterField has a null value.
+        """
         rastermodel = RasterModel.objects.create(rast=None)
         rastermodel = RasterModel.objects.get(id=rastermodel.id)
         self.assertIsNone(rastermodel.rast)
 
     def test_model_creation(self):
-        "Testing RasterField through a test model."
+        """
+        Test RasterField through a test model.
+        """
         # Create model instance from JSON raster
         rastermodel = RasterModel.objects.create(rast=JSON_RASTER)
         rastermodel = RasterModel.objects.get(id=rastermodel.id)
@@ -56,8 +59,8 @@ class RasterFieldTest(TransactionTestCase):
 
     def test_implicit_raster_transformation(self):
         """
-        Testing automatic transformation of rasters with srid
-        different from the field srid.
+        Test automatic transformation of rasters with srid different from the
+        field srid.
         """
         # Parse json raster
         rast = json.loads(JSON_RASTER)
@@ -67,9 +70,9 @@ class RasterFieldTest(TransactionTestCase):
 
         # Save model and get it from db
         rastermodel = RasterModel.objects.create(rast=rast)
-        rastermodel = RasterModel.objects.get(id=rastermodel.id)
+        rastermodel.refresh_from_db()
 
-        # Confirm raster has been transformed to default srid
+        # Confirm raster has been transformed to the default srid
         self.assertEqual(rastermodel.rast.srs.srid, 4326)
 
         # Confirm geotransform is in lat/lon

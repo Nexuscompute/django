@@ -14,19 +14,19 @@ POSTGIS_TO_GDAL = [1, 1, 1, 3, 1, 3, 2, 5, 4, None, 6, 7, None, None]
 # skew, srid, width, and height.
 #
 # Scale, origin and skew have x and y values. PostGIS currently uses
-# a fixed endiannes (1) and there is only one version (0).
+# a fixed endianness (1) and there is only one version (0).
 POSTGIS_HEADER_STRUCTURE = 'B H H d d d d d d i H H'
 
 # Lookup values to convert GDAL pixel types to struct characters. This is
 # used to pack and unpack the pixel values of PostGIS raster bands.
 GDAL_TO_STRUCT = [
     None, 'B', 'H', 'h', 'L', 'l', 'f', 'd',
-    None, None, None, None
+    None, None, None, None,
 ]
 
 # Size of the packed value in bytes for different numerical types.
 # This is needed to cut chunks of band data out of PostGIS raster strings
-# When decomposing them into GDALRasters.
+# when decomposing them into GDALRasters.
 # See https://docs.python.org/3/library/struct.html#format-characters
 STRUCT_SIZE = {
     'b': 1,  # Signed char

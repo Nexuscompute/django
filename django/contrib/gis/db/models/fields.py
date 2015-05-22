@@ -107,7 +107,7 @@ class BaseSpatialField(Field):
 
     def deconstruct(self):
         name, path, args, kwargs = super(BaseSpatialField, self).deconstruct()
-        # Always include SRID for less fragility; include spatial index if its
+        # Always include SRID for less fragility; include spatial index if it's
         # not the default value.
         kwargs['srid'] = self.srid
         if self.spatial_index is not True:
@@ -150,14 +150,16 @@ class BaseSpatialField(Field):
 
     def get_placeholder(self, value, compiler, connection):
         """
-        Returns the placeholder for the spaial column for the
+        Returns the placeholder for the spatial column for the
         given value.
         """
         return connection.ops.get_geom_placeholder(self, value, compiler)
 
 
 class GeometryField(GeoSelectFormatMixin, BaseSpatialField):
-    "The base Geometry field -- maps to the OpenGIS Specification Geometry type."
+    """
+    The base Geometry field -- maps to the OpenGIS Specification Geometry type.
+    """
 
     # The OpenGIS Geometry name.
     geom_type = 'GEOMETRY'
@@ -165,10 +167,11 @@ class GeometryField(GeoSelectFormatMixin, BaseSpatialField):
 
     description = _("The base Geometry field -- maps to the OpenGIS Specification Geometry type.")
 
-    def __init__(self, dim=2, geography=False, **kwargs):
+    def __init__(self, verbose_name=None, dim=2, geography=False, **kwargs):
         """
-        The initialization function for geometry fields. Takes the following
-        as keyword arguments:
+        The initialization function for geometry fields. In addition to the
+        parameters from BaseSpatialField, it takes the following as keyword
+        arguments:
 
         dim:
          The number of dimensions for this geometry.  Defaults to 2.
@@ -193,7 +196,7 @@ class GeometryField(GeoSelectFormatMixin, BaseSpatialField):
         self._extent = kwargs.pop('extent', (-180.0, -90.0, 180.0, 90.0))
         self._tolerance = kwargs.pop('tolerance', 0.05)
 
-        super(GeometryField, self).__init__(**kwargs)
+        super(GeometryField, self).__init__(verbose_name=verbose_name, **kwargs)
 
     def deconstruct(self):
         name, path, args, kwargs = super(GeometryField, self).deconstruct()
@@ -396,7 +399,7 @@ class ExtentField(GeoSelectFormatMixin, Field):
 
 class RasterField(BaseSpatialField):
     """
-    Raster field for GeoDjango
+    Raster field for GeoDjango.
     """
 
     description = "Raster Field"
@@ -416,7 +419,7 @@ class RasterField(BaseSpatialField):
 
     def get_db_prep_value(self, value, connection, prepared=False):
         self._check_connection(connection)
-        # Prepare raster for writing to database
+        # Prepare raster for writing to database.
         if not prepared:
             value = connection.ops.deconstruct_raster(value)
         return super(RasterField, self).get_db_prep_value(value, connection, prepared)

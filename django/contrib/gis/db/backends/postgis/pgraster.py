@@ -36,7 +36,7 @@ def get_pgraster_srid(data):
     """
     if data is None:
         return
-    # The positional arguments here extract the hex encoded srid from the
+    # The positional arguments here extract the hex-encoded srid from the
     # header of the PostGIS raster string. This can be understood through
     # the POSTGIS_HEADER_STRUCTURE constant definition in the const module.
     return unpack('i', data[106:114])[0]
@@ -44,7 +44,7 @@ def get_pgraster_srid(data):
 
 def from_pgraster(data):
     """
-    Converts a PostGIS HEX String into a python dictionary.
+    Converts a PostGIS HEX String into a Python dictionary.
     """
     # Return if input data is null
     if data is None:
@@ -106,7 +106,7 @@ def from_pgraster(data):
         'origin': (header[5], header[6]),
         'scale': (header[3], header[4]),
         'skew': (header[7], header[8]),
-        'bands': bands
+        'bands': bands,
     }
 
 
@@ -114,7 +114,7 @@ def to_pgraster(rast):
     """
     Converts a GDALRaster into PostGIS Raster format.
     """
-    # Retrun if the raster is null
+    # Return if the raster is null
     if rast is None or rast == '':
         return
 
