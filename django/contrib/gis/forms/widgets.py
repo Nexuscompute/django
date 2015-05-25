@@ -87,6 +87,25 @@ class OpenLayersWidget(BaseGeometryWidget):
         )
 
 
+class OpenLayers3Widget(BaseGeometryWidget):
+    template_name = 'gis/openlayers.html'
+
+    class Media:
+        css = {
+            'all': (
+                '//cdnjs.cloudflare.com/ajax/libs/ol3/3.5.0/ol.min.css',
+                'gis/css/ol3.css',
+            )
+        }
+        js = (
+            '//cdnjs.cloudflare.com/ajax/libs/ol3/3.5.0/ol.min.js',  # ol-debug.js
+            'gis/js/OL3MapWidget.js',
+        )
+
+    def serialize(self, value):
+        return value.json if value else ''
+
+
 class OSMWidget(BaseGeometryWidget):
     """
     An OpenLayers/OpenStreetMap-based widget.
