@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.gis.geos import GEOSException, GEOSGeometry
 from django.utils.translation import ugettext_lazy as _
 
-from .widgets import OpenLayersWidget
+from .widgets import OpenLayers3Widget
 
 
 class GeometryField(forms.Field):
@@ -13,7 +13,7 @@ class GeometryField(forms.Field):
     accepted by GEOSGeometry is accepted by this form.  By default,
     this includes WKT, HEXEWKB, WKB (in a buffer), and GeoJSON.
     """
-    widget = OpenLayersWidget
+    widget = OpenLayers3Widget
     geom_type = 'GEOMETRY'
 
     default_error_messages = {
