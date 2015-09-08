@@ -164,7 +164,7 @@ class Query(BaseExpression):
         # aliases too.
         # Map external tables to whether they are aliased.
         self.external_aliases = {}
-        self.table_map = {}     # Maps table names to list of aliases.
+        self.table_map = {}     # Maps table objects to list of aliases.
         self.default_cols = True
         self.default_ordering = True
         self.standard_ordering = True
@@ -742,7 +742,7 @@ class Query(BaseExpression):
             for model, values in seen.items():
                 callback(target, model, values)
 
-    def table_alias(self, table_name, create=False, filtered_relation=None):
+    def table_alias(self, table, create=False, filtered_relation=None):
         """
         Return a table alias for the given table_name and whether this is a
         new alias or not.
@@ -750,7 +750,7 @@ class Query(BaseExpression):
         If 'create' is true, a new alias is always created. Otherwise, the
         most recently created alias for the table (if one exists) is reused.
         """
-        alias_list = self.table_map.get(table_name)
+        alias_list = self.table_map.get(table)
         if not create and alias_list:
             alias = alias_list[0]
             self.alias_refcount[alias] += 1
@@ -762,8 +762,8 @@ class Query(BaseExpression):
             alias_list.append(alias)
         else:
             # The first occurrence of a table uses the table name directly.
-            alias = filtered_relation.alias if filtered_relation is not None else table_name
-            self.table_map[table_name] = [alias]
+            alias = filtered_relation.alias if filtered_relation is not None else table
+            self.table_map[table] = [alias]
         self.alias_refcount[alias] = 1
         return alias, True
 
@@ -865,7 +865,7 @@ class Query(BaseExpression):
             del self.alias_refcount[old_alias]
             del self.alias_map[old_alias]
 
-            table_aliases = self.table_map[alias_data.table_name]
+            table_aliases = self.table_map[alias_data.table]
             for pos, alias in enumerate(table_aliases):
                 if alias == old_alias:
                     table_aliases[pos] = new_alias
@@ -934,7 +934,7 @@ class Query(BaseExpression):
             alias = self.base_table
             self.ref_alias(alias)
         else:
-            alias = self.join(BaseTable(self.get_meta().db_table, None))
+            alias = self.join(BaseTable(self.get_meta().table_cls, None))
         return alias
 
     def count_active_tables(self):
@@ -973,7 +973,7 @@ class Query(BaseExpression):
             return reuse_alias
 
         # No reuse is possible, so we need a new alias.
-        alias, _ = self.table_alias(join.table_name, create=True, filtered_relation=join.filtered_relation)
+        alias, _ = self.table_alias(join.table, create=True, filtered_relation=join.filtered_relation)
         if join.join_type:
             if self.alias_map[join.parent_alias].join_type == LOUTER or join.nullable:
                 join_type = LOUTER
@@ -1644,7 +1644,7 @@ class Query(BaseExpression):
             else:
                 nullable = True
             connection = Join(
-                opts.db_table, alias, table_alias, INNER, join.join_field,
+                opts.table_cls, alias, table_alias, INNER, join.join_field,
                 nullable, filtered_relation=filtered_relation,
             )
             reuse = can_reuse if join.m2m else None
@@ -2061,7 +2061,9 @@ class Query(BaseExpression):
         if where or params:
             self.where.add(ExtraWhere(where, params), AND)
         if tables:
-            self.extra_tables += tuple(tables)
+            # TODO - resolve circular import
+            from django.db.models import ModelTable
+            self.extra_tables += tuple(ModelTable(t) for t in tables)
         if order_by:
             self.extra_order_by = order_by
 
@@ -2315,7 +2317,7 @@ class Query(BaseExpression):
         # But the first entry in the query's FROM clause must not be a JOIN.
         for table in self.alias_map:
             if self.alias_refcount[table] > 0:
-                self.alias_map[table] = BaseTable(self.alias_map[table].table_name, table)
+                self.alias_map[table] = BaseTable(self.alias_map[table].table, table)
                 break
         self.set_select([f.get_col(select_alias) for f in select_fields])
         return trimmed_prefix, contains_louter

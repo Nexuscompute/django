@@ -29,7 +29,7 @@ class Join:
 
     This class is primarily used in Query.alias_map. All entries in alias_map
     must be Join compatible by providing the following attributes and methods:
-        - table_name (string)
+        - table (ModelTable like)
         - table_alias (possible alias for the table, can be None)
         - join_type (can be None for those entries that aren't joined from
           anything)
@@ -38,10 +38,10 @@ class Join:
         - as_sql()
         - relabeled_clone()
     """
-    def __init__(self, table_name, parent_alias, table_alias, join_type,
+    def __init__(self, table, parent_alias, table_alias, join_type,
                  join_field, nullable, filtered_relation=None):
         # Join table
-        self.table_name = table_name
+        self.table = table
         self.parent_alias = parent_alias
         # Note: table_alias is not necessarily known at instantiation time.
         self.table_alias = table_alias
@@ -63,9 +63,9 @@ class Join:
         clause for this join.
         """
         join_conditions = []
-        params = []
         qn = compiler.quote_name_unless_alias
         qn2 = connection.ops.quote_name
+        table_sql, params = compiler.compile(self.table)
 
         # Add a join condition for each pair of joining columns.
         for lhs_col, rhs_col in self.join_cols:
@@ -96,8 +96,11 @@ class Join:
                 "joining columns or extra restrictions." % declared_field.__class__
             )
         on_clause_sql = ' AND '.join(join_conditions)
-        alias_str = '' if self.table_alias == self.table_name else (' %s' % self.table_alias)
-        sql = '%s %s%s ON (%s)' % (self.join_type, qn(self.table_name), alias_str, on_clause_sql)
+        if self.table.requires_alias(self.table_alias, compiler):
+            alias_str = ' %s' % self.table_alias
+        else:
+            alias_str = ''
+        sql = '%s %s%s ON (%s)' % (self.join_type, table_sql, alias_str, on_clause_sql)
         return sql, params
 
     def relabeled_clone(self, change_map):
@@ -109,7 +112,7 @@ class Join:
         else:
             filtered_relation = None
         return self.__class__(
-            self.table_name, new_parent_alias, new_table_alias, self.join_type,
+            self.table, new_parent_alias, new_table_alias, self.join_type,
             self.join_field, self.nullable, filtered_relation=filtered_relation,
         )
 
@@ -117,7 +120,7 @@ class Join:
     def identity(self):
         return (
             self.__class__,
-            self.table_name,
+            self.table,
             self.parent_alias,
             self.join_field,
             self.filtered_relation,
@@ -157,21 +160,24 @@ class BaseTable:
     parent_alias = None
     filtered_relation = None
 
-    def __init__(self, table_name, alias):
-        self.table_name = table_name
+    def __init__(self, table, alias):
+        self.table = table
         self.table_alias = alias
 
     def as_sql(self, compiler, connection):
-        alias_str = '' if self.table_alias == self.table_name else (' %s' % self.table_alias)
-        base_sql = compiler.quote_name_unless_alias(self.table_name)
-        return base_sql + alias_str, []
+        if self.table.requires_alias(self.table_alias, compiler):
+            alias_str = ' %s' % self.table_alias
+        else:
+            alias_str = '' if self.table_alias == self.table.table else (' %s' % self.table_alias)
+        base_sql, params = compiler.compile(self.table)
+        return base_sql + alias_str, params
 
     def relabeled_clone(self, change_map):
-        return self.__class__(self.table_name, change_map.get(self.table_alias, self.table_alias))
+        return self.__class__(self.table, change_map.get(self.table_alias, self.table_alias))
 
     @property
     def identity(self):
-        return self.__class__, self.table_name, self.table_alias
+        return self.__class__, self.table, self.table_alias
 
     def __eq__(self, other):
         if not isinstance(other, BaseTable):

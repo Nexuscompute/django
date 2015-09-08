@@ -41,7 +41,7 @@ class DeleteQuery(Query):
                 f'{field.attname}__in',
                 pk_list[offset:offset + GET_ITERATOR_CHUNK_SIZE],
             )
-            num_deleted += self.do_query(self.get_meta().db_table, self.where, using=using)
+            num_deleted += self.do_query(self.get_meta().table_cls, self.where, using=using)
         return num_deleted
 
 

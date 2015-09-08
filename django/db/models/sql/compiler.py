@@ -446,9 +446,10 @@ class SQLCompiler:
         """
         if name in self.quote_cache:
             return self.quote_cache[name]
-        if ((name in self.query.alias_map and name not in self.query.table_map) or
+        tables = set(getattr(t, 'table', None) for t in self.query.table_map)
+        if ((name in self.query.alias_map and name not in tables) or
                 name in self.query.extra_select or (
-                    self.query.external_aliases.get(name) and name not in self.query.table_map)):
+                    self.query.external_aliases.get(name) and name not in tables)):
             self.quote_cache[name] = name
             return name
         r = self.connection.ops.quote_name(name)
@@ -1376,7 +1377,10 @@ class SQLInsertCompiler(SQLCompiler):
         qn = self.connection.ops.quote_name
         opts = self.query.get_meta()
         insert_statement = self.connection.ops.insert_statement(ignore_conflicts=self.query.ignore_conflicts)
-        result = ['%s %s' % (insert_statement, qn(opts.db_table))]
+        table_sql, params = self.compile(opts.table_cls)
+        if params:
+            raise RuntimeError("Table %r doesn't support saving" % opts.table_cls)
+        result = ['%s %s' % (insert_statement, table_sql)]
         fields = self.query.fields or [opts.pk]
         result.append('(%s)' % ', '.join(qn(f.column) for f in fields))
 
@@ -1575,7 +1579,7 @@ class SQLUpdateCompiler(SQLCompiler):
                 values.append('%s = NULL' % qn(name))
         table = self.query.base_table
         result = [
-            'UPDATE %s SET' % qn(table),
+            'UPDATE %s SET' % self.compile(self.query.alias_map[table])[0],
             ', '.join(values),
         ]
         where, params = self.compile(self.query.where)

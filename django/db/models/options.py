@@ -25,7 +25,7 @@ IMMUTABLE_WARNING = (
 )
 
 DEFAULT_NAMES = (
-    'verbose_name', 'verbose_name_plural', 'db_table', 'ordering',
+    'verbose_name', 'verbose_name_plural', 'db_table', 'table_cls', 'ordering',
     'unique_together', 'permissions', 'get_latest_by', 'order_with_respect_to',
     'app_label', 'db_tablespace', 'abstract', 'managed', 'proxy', 'swappable',
     'auto_created', 'index_together', 'apps', 'default_permissions',
@@ -61,6 +61,42 @@ def make_immutable_fields_list(name, data):
     return ImmutableList(data, warning=IMMUTABLE_WARNING % name)
 
 
+class ModelTable:
+    plain_table_ref = True
+
+    def __init__(self, table):
+        self.table = table
+        # Cache for the quoted table name per connection.
+        self.cache = {}
+
+    def as_sql(self, compiler, connection):
+        try:
+            sql, params = self.cache[connection.vendor]
+            return sql, params[:]
+        except KeyError:
+            sql, params = connection.ops.quote_name(self.table), []
+            self.cache[connection.vendor] = (sql, params)
+            return sql, params[:]
+
+    @cached_property
+    def default_alias(self):
+        return self.table
+
+    def requires_alias(self, table_alias, compiler):
+        return table_alias != self.default_alias
+
+    def __eq__(self, other):
+        if isinstance(other, ModelTable):
+            return self.table == other.table
+        return False
+
+    def __hash__(self):
+        return hash(self.table)
+
+    def deconstruct(self):
+        return ("django.db.models.ModelTable", [self.table], {})
+
+
 class Options:
     FORWARD_PROPERTIES = {
         'fields', 'many_to_many', 'concrete_fields', 'local_concrete_fields',
@@ -82,7 +118,8 @@ class Options:
         self.model_name = None
         self.verbose_name = None
         self.verbose_name_plural = None
-        self.db_table = ''
+        # Note - db_table is assigned to table_cls.
+        self.table_cls = None
         self.ordering = []
         self._ordering_clash = False
         self.indexes = []
@@ -142,9 +179,6 @@ class Options:
         return self.apps.app_configs.get(self.app_label)
 
     def contribute_to_class(self, cls, name):
-        from django.db import connection
-        from django.db.backends.utils import truncate_name
-
         cls._meta = self
         self.model = cls
         # First, construct the default values for these options.
@@ -199,8 +233,32 @@ class Options:
 
         # If the db_table wasn't provided, use the app_label + model_name.
         if not self.db_table:
-            self.db_table = "%s_%s" % (self.app_label, self.model_name)
-            self.db_table = truncate_name(self.db_table, connection.ops.max_name_length())
+            from django.db import connection
+            from django.db.backends.utils import truncate_name
+            db_table = "%s_%s" % (self.app_label, self.model_name)
+            self.db_table = truncate_name(db_table, connection.ops.max_name_length())
+
+    @property
+    def db_table(self):
+        """
+        Provide db_table as a backwards compatibility property. The actual value is
+        always stored in table_cls. When table_cls is a plain_table_ref, then the
+        db_table property is usable. For other cases, the table_cls must be accessed
+        directly.
+        """
+        if self.table_cls is None:
+            return ''
+        if self.table_cls.plain_table_ref:
+            return self.table_cls.table
+        raise AttributeError("This class has a table_cls that can't be returned directly as a string.")
+
+    @db_table.setter
+    def db_table(self, table):
+        if hasattr(table, 'plain_table_ref'):
+            raise TypeError("Can't assign a class to db_table property. "
+                            "Use table_cls instead.")
+        else:
+            self.table_cls = ModelTable(table)
 
     def _format_names_with_class(self, cls, objs):
         """App label/class name interpolation for object names."""
@@ -328,7 +386,7 @@ class Options:
         """
         self.pk = target._meta.pk
         self.proxy_for_model = target
-        self.db_table = target._meta.db_table
+        self.table_cls = target._meta.table_cls
 
     def __repr__(self):
         return '<Options for %s>' % self.object_name
