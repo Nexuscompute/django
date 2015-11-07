@@ -7,7 +7,7 @@ from django.contrib.gis.measure import (
 )
 from django.core.exceptions import FieldError
 from django.db.models import FloatField, IntegerField, TextField
-from django.db.models.expressions import Func, Value
+from django.db.models.expressions import F, Func, Value
 from django.utils import six
 
 NUMERIC_TYPES = six.integer_types + (float, Decimal)
@@ -16,12 +16,23 @@ NUMERIC_TYPES = six.integer_types + (float, Decimal)
 class GeoFunc(Func):
     function = None
     output_field_class = None
-    geom_param_pos = 0
+    geom_param_pos = None
 
     def __init__(self, *expressions, **extra):
         if 'output_field' not in extra and self.output_field_class:
             extra['output_field'] = self.output_field_class()
         super(GeoFunc, self).__init__(*expressions, **extra)
+
+    def _parse_expressions(self, *expressions):
+        def parse(arg, idx):
+            geom_param = self.geom_param_pos is None or idx in self.geom_param_pos
+            value_class = GeomValue if geom_param else Value
+            return F(arg) if isinstance(arg, six.string_types) else value_class(arg)
+
+        return [
+            arg if hasattr(arg, 'resolve_expression') else parse(arg, idx)
+            for idx, arg in enumerate(expressions)
+        ]
 
     @property
     def name(self):
@@ -29,7 +40,7 @@ class GeoFunc(Func):
 
     @property
     def srid(self):
-        expr = self.source_expressions[self.geom_param_pos]
+        expr = self.source_expressions[0 if self.geom_param_pos is None else self.geom_param_pos[0]]
         if hasattr(expr, 'srid'):
             return expr.srid
         try:
@@ -67,6 +78,11 @@ class GeoFunc(Func):
 class GeomValue(Value):
     geography = False
 
+    def __init__(self, value, output_field=None):
+        if not hasattr(value, 'srid') or not value.srid:
+            raise ValueError("Please provide a geometry attribute with a defined SRID.")
+        super(GeomValue, self).__init__(value, output_field=output_field)
+
     @property
     def srid(self):
         return self.value.srid
@@ -86,13 +102,6 @@ class GeomValue(Value):
 
     def as_oracle(self, compiler, connection):
         return 'SDO_GEOMETRY(%%s, %s)' % self.srid, [connection.ops.Adapter(self.value)]
-
-
-class GeoFuncWithGeoParam(GeoFunc):
-    def __init__(self, expression, geom, *expressions, **extra):
-        if not hasattr(geom, 'srid') or not geom.srid:
-            raise ValueError("Please provide a geometry attribute with a defined SRID.")
-        super(GeoFuncWithGeoParam, self).__init__(expression, GeomValue(geom), *expressions, **extra)
 
 
 class SQLiteDecimalToFloatMixin(object):
@@ -143,6 +152,7 @@ class Area(OracleToleranceMixin, GeoFunc):
 
 
 class AsGeoJSON(GeoFunc):
+    geom_param_pos = (0,)
     output_field_class = TextField
 
     def __init__(self, expression, bbox=False, crs=False, precision=8, **extra):
@@ -162,7 +172,7 @@ class AsGeoJSON(GeoFunc):
 
 
 class AsGML(GeoFunc):
-    geom_param_pos = 1
+    geom_param_pos = (1,)
     output_field_class = TextField
 
     def __init__(self, expression, version=2, precision=8, **extra):
@@ -180,6 +190,7 @@ class AsKML(AsGML):
 
 
 class AsSVG(GeoFunc):
+    geom_param_pos = (0,)
     output_field_class = TextField
 
     def __init__(self, expression, relative=False, precision=8, **extra):
@@ -193,6 +204,8 @@ class AsSVG(GeoFunc):
 
 
 class BoundingCircle(GeoFunc):
+    geom_param_pos = (0,)
+
     def __init__(self, expression, num_seg=48, **extra):
         super(BoundingCircle, self).__init__(*[expression, num_seg], **extra)
 
@@ -201,7 +214,7 @@ class Centroid(OracleToleranceMixin, GeoFunc):
     arity = 1
 
 
-class Difference(OracleToleranceMixin, GeoFuncWithGeoParam):
+class Difference(OracleToleranceMixin, GeoFunc):
     arity = 2
 
 
@@ -223,7 +236,8 @@ class DistanceResultMixin(object):
         return value
 
 
-class Distance(DistanceResultMixin, OracleToleranceMixin, GeoFuncWithGeoParam):
+class Distance(DistanceResultMixin, OracleToleranceMixin, GeoFunc):
+    geom_param_pos = (0, 1)
     output_field_class = FloatField
     spheroid = None
 
@@ -240,8 +254,9 @@ class Distance(DistanceResultMixin, OracleToleranceMixin, GeoFuncWithGeoParam):
         geography = src_field.geography and self.srid == 4326
         if geography:
             # Set parameters as geography if base field is geography
+            first_non_geom_param = self.geom_param_pos[0] + 1
             for pos, expr in enumerate(
-                    self.source_expressions[self.geom_param_pos + 1:], start=self.geom_param_pos + 1):
+                    self.source_expressions[first_non_geom_param:], start=first_non_geom_param):
                 if isinstance(expr, GeomValue):
                     expr.geography = True
         elif geo_field.geodetic(connection):
@@ -269,6 +284,7 @@ class ForceRHR(GeoFunc):
 
 
 class GeoHash(GeoFunc):
+    geom_param_pos = (0,)
     output_field_class = TextField
 
     def __init__(self, expression, precision=None, **extra):
@@ -278,7 +294,7 @@ class GeoHash(GeoFunc):
         super(GeoHash, self).__init__(*expressions, **extra)
 
 
-class Intersection(OracleToleranceMixin, GeoFuncWithGeoParam):
+class Intersection(OracleToleranceMixin, GeoFunc):
     arity = 2
 
 
@@ -336,7 +352,7 @@ class NumPoints(GeoFunc):
     arity = 1
 
     def as_sqlite(self, compiler, connection):
-        if self.source_expressions[self.geom_param_pos].output_field.geom_type != 'LINESTRING':
+        if self.source_expressions[0].output_field.geom_type != 'LINESTRING':
             raise TypeError("Spatialite NumPoints can only operate on LineString content")
         return super(NumPoints, self).as_sql(compiler, connection)
 
@@ -361,6 +377,8 @@ class Reverse(GeoFunc):
 
 
 class Scale(SQLiteDecimalToFloatMixin, GeoFunc):
+    geom_param_pos = (0,)
+
     def __init__(self, expression, x, y, z=0.0, **extra):
         expressions = [
             expression,
@@ -373,6 +391,8 @@ class Scale(SQLiteDecimalToFloatMixin, GeoFunc):
 
 
 class SnapToGrid(SQLiteDecimalToFloatMixin, GeoFunc):
+    geom_param_pos = (0,)
+
     def __init__(self, expression, *args, **extra):
         nargs = len(args)
         expressions = [expression]
@@ -393,11 +413,13 @@ class SnapToGrid(SQLiteDecimalToFloatMixin, GeoFunc):
         super(SnapToGrid, self).__init__(*expressions, **extra)
 
 
-class SymDifference(OracleToleranceMixin, GeoFuncWithGeoParam):
+class SymDifference(OracleToleranceMixin, GeoFunc):
     arity = 2
 
 
 class Transform(GeoFunc):
+    geom_param_pos = (0,)
+
     def __init__(self, expression, srid, **extra):
         expressions = [
             expression,
@@ -408,7 +430,7 @@ class Transform(GeoFunc):
     @property
     def srid(self):
         # Make srid the resulting srid of the transformation
-        return self.source_expressions[self.geom_param_pos + 1].value
+        return self.source_expressions[1].value
 
     def convert_value(self, value, expression, connection, context):
         value = super(Transform, self).convert_value(value, expression, connection, context)
@@ -429,5 +451,5 @@ class Translate(Scale):
         return super(Translate, self).as_sqlite(compiler, connection)
 
 
-class Union(OracleToleranceMixin, GeoFuncWithGeoParam):
+class Union(OracleToleranceMixin, GeoFunc):
     arity = 2
