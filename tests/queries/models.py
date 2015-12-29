@@ -750,22 +750,11 @@ class JSONFieldNullable(models.Model):
         required_db_features = {'supports_json_field'}
 
 
-class SchemaQualified(models.ModelTable):
-    def __init__(self, schema, table):
-        self.schema = schema
-        self.table = table
-
-    def as_sql(self, compiler, connection):
-        # Note that it would be easy to change the schema using thread locals
-        # if wanted.
-        return '%s.%s' % (connection.ops.quote_name(self.schema), connection.ops.quote_name(self.table)), []
-
-
 class SchemaQualified(models.Model):
     val = models.TextField()
 
     class Meta:
-        table_cls = SchemaQualified('other_schema', 'schema_qualified')
+        table_cls = models.ModelTable('other_schema', 'schema_qualified')
         managed = False
 
 
@@ -790,7 +779,7 @@ class Table(models.Model):
     val = models.TextField()
 
     class Meta:
-        table_cls = DynamicQuery('queries_table')
+        table_cls = DynamicQuery(None, 'queries_table')
 
 
 class ShadowTable(models.Model):

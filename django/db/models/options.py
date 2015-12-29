@@ -62,9 +62,20 @@ def make_immutable_fields_list(name, data):
 
 
 class ModelTable:
+    """
+    The _meta.table_cls can hold either a regular table reference,
+    or anything else usable in a subquery. If table_cls is a
+    regular table reference, then plain_table_ref should be set
+    to True, and the table_cls must contain table and schema
+    attributes.
+
+    Note that currently there is no support for schema qualified
+    tables for migrations.
+    """
     plain_table_ref = True
 
-    def __init__(self, table):
+    def __init__(self, schema, table):
+        self.schema = schema
         self.table = table
         # Cache for the quoted table name per connection.
         self.cache = {}
@@ -74,27 +85,37 @@ class ModelTable:
             sql, params = self.cache[connection.vendor]
             return sql, params[:]
         except KeyError:
-            sql, params = connection.ops.quote_name(self.table), []
-            self.cache[connection.vendor] = (sql, params)
-            return sql, params[:]
+            if self.schema:
+                sql = '%s.%s' % (connection.ops.quote_name(self.schema),
+                                 connection.ops.quote_name(self.table))
+            else:
+                sql = connection.ops.quote_name(self.table)
+            self.cache[connection.vendor] = (sql, [])
+            return sql, []
 
     @cached_property
     def default_alias(self):
+        """
+        String to use as default alias for this table.
+        """
         return self.table
 
     def requires_alias(self, table_alias, compiler):
-        return table_alias != self.default_alias
+        """
+        Does this table require usage of aliases always?
+        """
+        return self.schema is not None or table_alias != self.default_alias
 
     def __eq__(self, other):
         if isinstance(other, ModelTable):
-            return self.table == other.table
+            return self.schema == other.schema and self.table == other.table
         return False
 
     def __hash__(self):
-        return hash(self.table)
+        return hash((self.schema, self.table))
 
     def deconstruct(self):
-        return ("django.db.models.ModelTable", [self.table], {})
+        return ("django.db.models.ModelTable", [self.table, self.schema], {})
 
 
 class Options:
@@ -258,7 +279,7 @@ class Options:
             raise TypeError("Can't assign a class to db_table property. "
                             "Use table_cls instead.")
         else:
-            self.table_cls = ModelTable(table)
+            self.table_cls = ModelTable(None, table)
 
     def _format_names_with_class(self, cls, objs):
         """App label/class name interpolation for object names."""
