@@ -61,6 +61,7 @@ class CustomManyToManyField(RelatedField):
     _get_m2m_attr = models.ManyToManyField.__dict__['_get_m2m_attr']
     _get_m2m_reverse_attr = models.ManyToManyField.__dict__['_get_m2m_reverse_attr']
     _get_m2m_db_table = models.ManyToManyField.__dict__['_get_m2m_db_table']
+    _get_m2m_table_cls = models.ManyToManyField.__dict__['_get_m2m_table_cls']
 
 
 class InheritedManyToManyField(models.ManyToManyField):

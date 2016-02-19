@@ -13,9 +13,9 @@ from django.db.models import (
     CASCADE, PROTECT, AutoField, BigAutoField, BigIntegerField, BinaryField,
     BooleanField, CharField, CheckConstraint, DateField, DateTimeField,
     DecimalField, F, FloatField, ForeignKey, ForeignObject, Index,
-    IntegerField, JSONField, ManyToManyField, Model, OneToOneField, OrderBy,
-    PositiveIntegerField, Q, SlugField, SmallAutoField, SmallIntegerField,
-    TextField, TimeField, UniqueConstraint, UUIDField, Value,
+    IntegerField, JSONField, ManyToManyField, Model, ModelTable, OneToOneField,
+    OrderBy, PositiveIntegerField, Q, SlugField, SmallAutoField,
+    SmallIntegerField, TextField, TimeField, UniqueConstraint, UUIDField, Value,
 )
 from django.db.models.fields.json import KeyTextTransform
 from django.db.models.functions import Abs, Cast, Collate, Lower, Random, Upper
@@ -2617,8 +2617,10 @@ class SchemaTests(TransactionTestCase):
         columns = self.column_classes(Author)
         self.assertEqual(columns['name'][0], connection.features.introspected_field_types['CharField'])
         # Alter the table
+        old_table = ModelTable(None, "schema_author")
+        new_table = ModelTable(None, "schema_otherauthor")
         with connection.schema_editor(atomic=connection.features.supports_atomic_references_rename) as editor:
-            editor.alter_db_table(Author, "schema_author", "schema_otherauthor")
+            editor.alter_db_table(Author, old_table, new_table)
         Author._meta.db_table = "schema_otherauthor"
         columns = self.column_classes(Author)
         self.assertEqual(columns['name'][0], connection.features.introspected_field_types['CharField'])
@@ -2626,7 +2628,7 @@ class SchemaTests(TransactionTestCase):
         self.assertForeignKeyExists(Book, "author_id", "schema_otherauthor")
         # Alter the table again
         with connection.schema_editor(atomic=connection.features.supports_atomic_references_rename) as editor:
-            editor.alter_db_table(Author, "schema_otherauthor", "schema_author")
+            editor.alter_db_table(Author, new_table, old_table)
         # Ensure the table is still there
         Author._meta.db_table = "schema_author"
         columns = self.column_classes(Author)

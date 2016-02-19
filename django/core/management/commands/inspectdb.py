@@ -75,7 +75,7 @@ class Command(BaseCommand):
                     except NotImplementedError:
                         relations = {}
                     try:
-                        constraints = connection.introspection.get_constraints(cursor, table_name)
+                        constraints = connection.introspection.get_constraints(cursor, None, table_name)
                     except NotImplementedError:
                         constraints = {}
                     primary_key_column = connection.introspection.get_primary_key_column(cursor, table_name)

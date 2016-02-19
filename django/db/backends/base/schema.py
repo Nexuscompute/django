@@ -1006,8 +1006,9 @@ class BaseDatabaseSchemaEditor:
         """Alter M2Ms to repoint their to= endpoints."""
         # Rename the through table
         if old_field.remote_field.through._meta.table_cls != new_field.remote_field.through._meta.table_cls:
-            self.alter_db_table(old_field.remote_field.through, old_field.remote_field.through._meta,
-                                new_field.remote_field.through._meta)
+            self.alter_db_table(old_field.remote_field.through,
+                                old_field.remote_field.through._meta.table_cls,
+                                new_field.remote_field.through._meta.table_cls)
         # Repoint the FK to the other side
         self.alter_field(
             new_field.remote_field.through,
