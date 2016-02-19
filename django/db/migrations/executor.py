@@ -305,7 +305,6 @@ class MigrationExecutor:
                 )
             )
 
-        # TODO: we need schema-aware introspection for this case.
         if migration.initial is None:
             # Bail if the migration isn't the first one in its app
             if any(app == migration.app_label for app, name in migration.dependencies):
@@ -323,7 +322,7 @@ class MigrationExecutor:
         found_add_field_migration = False
         fold_identifier_case = self.connection.features.ignores_table_name_case
         with self.connection.cursor() as cursor:
-            existing_table_names = set(self.connection.introspection.table_names(cursor))
+            existing_table_names = set(self.connection.introspection.table_names(cursor, include_schema=True))
             if fold_identifier_case:
                 existing_table_names = {name.casefold() for name in existing_table_names}
         # Make sure all create model and add field operations are done
@@ -336,10 +335,10 @@ class MigrationExecutor:
                     model = global_apps.get_model(model._meta.swapped)
                 if should_skip_detecting_model(migration, model):
                     continue
-                db_table = model._meta.db_table
+                db_table = model._meta.table_cls.table
                 if fold_identifier_case:
                     db_table = db_table.casefold()
-                if db_table not in existing_table_names:
+                if (model._meta.table_cls.schema, db_table) not in existing_table_names:
                     return False, project_state
                 found_create_model_migration = True
             elif isinstance(operation, migrations.AddField):
@@ -351,21 +350,22 @@ class MigrationExecutor:
                 if should_skip_detecting_model(migration, model):
                     continue
 
-                table = model._meta.db_table
+                table = model._meta.table_cls.table
+                schema = model._meta.table_cls.schema
                 field = model._meta.get_field(operation.name)
 
                 # Handle implicit many-to-many tables created by AddField.
                 if field.many_to_many:
-                    through_db_table = field.remote_field.through._meta.db_table
+                    through_table_name = field.remote_field.through._meta.table_cls.table
                     if fold_identifier_case:
-                        through_db_table = through_db_table.casefold()
-                    if through_db_table not in existing_table_names:
+                        through_table_name = through_table_name.casefold()
+                    if (table_cls.schema, through_table_name) not in existing_table_names:
                         return False, project_state
                     else:
                         found_add_field_migration = True
                         continue
                 with self.connection.cursor() as cursor:
-                    columns = self.connection.introspection.get_table_description(cursor, table)
+                    columns = self.connection.introspection.get_table_description(cursor, schema, table)
                 for column in columns:
                     field_column = field.column
                     column_name = column.name

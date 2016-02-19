@@ -83,7 +83,7 @@ class Command(BaseCommand):
                         c['columns'][0] for c in constraints.values()
                         if c['unique'] and len(c['columns']) == 1
                     ]
-                    table_description = connection.introspection.get_table_description(cursor, table_name)
+                    table_description = connection.introspection.get_table_description(cursor, None, table_name)
                 except Exception as e:
                     yield "# Unable to inspect table '%s'" % table_name
                     yield "# The error was: %s" % e

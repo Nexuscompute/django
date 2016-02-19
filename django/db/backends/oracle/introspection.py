@@ -85,13 +85,15 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             UNION ALL
             SELECT mview_name, 'v' FROM user_mviews
         """)
-        return [TableInfo(self.identifier_converter(row[0]), row[1]) for row in cursor.fetchall()]
+        return [TableInfo(self.identifier_converter(row[0]), row[1], None) for row in cursor.fetchall()]
 
-    def get_table_description(self, cursor, table_name):
+    def get_table_description(self, cursor, schema, table_name):
         """
         Return a description of the table with the DB-API cursor.description
         interface.
         """
+        if schema:
+            raise NotImplementedError("Schema introspection is not yet supported on Oracle")
         # user_tab_columns gives data default for columns
         cursor.execute("""
             SELECT

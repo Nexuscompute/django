@@ -44,7 +44,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                 return 'SmallAutoField'
         return field_type
 
-    def get_table_list(self, cursor):
+    def get_table_list(self, cursor, include_schema=False):
         """Return a list of table and view names in the current database."""
         cursor.execute("""
             SELECT c.relname,
@@ -55,9 +55,22 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                 AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
                 AND pg_catalog.pg_table_is_visible(c.oid)
         """)
-        return [TableInfo(*row) for row in cursor.fetchall() if row[0] not in self.ignored_tables]
+        tables = [TableInfo(*row, None) for row in cursor.fetchall() if row[0] not in self.ignored_tables]
+        if include_schema:
+            cursor.execute("""
+                SELECT c.relname, c.relkind, n.nspname
+                FROM pg_catalog.pg_class c
+                LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+                WHERE c.relkind IN ('r', 'v')
+                    AND n.nspname NOT IN ('pg_catalog', 'pg_toast')""")
+            tables.extend([
+                TableInfo(row[0], {'r': 't', 'v': 'v'}.get(row[1]), row[2])
+                for row in cursor.fetchall()
+                if row[0] not in self.ignored_tables
+            ])
+        return tables
 
-    def get_table_description(self, cursor, table_name):
+    def get_table_description(self, cursor, schema, table_name):
         """
         Return a description of the table with the DB-API cursor.description
         interface.
@@ -65,7 +78,15 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         # Query the pg_catalog tables as cursor.description does not reliably
         # return the nullable property and information_schema.columns does not
         # contain details of materialized views.
-        cursor.execute("""
+        if schema is None:
+            schema_where = "AND n.nspname NOT IN ('pg_catalog', 'pg_toast')"
+            schema_prefix = ""
+            params = [table_name]
+        else:
+            schema_where = "AND n.nspname = %s"
+            schema_prefix = self.connection.ops.quote_name(schema) + "."
+            params = [table_name, schema]
+        cursor.execute(f"""
             SELECT
                 a.attname AS column_name,
                 NOT (a.attnotnull OR (t.typtype = 'd' AND t.typnotnull)) AS is_nullable,
@@ -79,11 +100,14 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             JOIN pg_namespace n ON c.relnamespace = n.oid
             WHERE c.relkind IN ('f', 'm', 'p', 'r', 'v')
                 AND c.relname = %s
-                AND n.nspname NOT IN ('pg_catalog', 'pg_toast')
+                {schema_where}
                 AND pg_catalog.pg_table_is_visible(c.oid)
-        """, [table_name])
+        """, params)
         field_map = {line[0]: line[1:] for line in cursor.fetchall()}
-        cursor.execute("SELECT * FROM %s LIMIT 1" % self.connection.ops.quote_name(table_name))
+        cursor.execute("SELECT * FROM %s%s LIMIT 1" % (
+            schema_prefix,
+            self.connection.ops.quote_name(table_name)
+        ))
         return [
             FieldInfo(
                 line.name,

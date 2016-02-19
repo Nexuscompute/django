@@ -67,7 +67,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             return 'JSONField'
         return field_type
 
-    def get_table_list(self, cursor):
+    def get_table_list(self, cursor, include_schema=False):
         """Return a list of table and view names in the current database."""
         # Skip the sqlite_sequence system table used for autoincrement key
         # generation.
@@ -75,13 +75,15 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             SELECT name, type FROM sqlite_master
             WHERE type in ('table', 'view') AND NOT name='sqlite_sequence'
             ORDER BY name""")
-        return [TableInfo(row[0], row[1][0]) for row in cursor.fetchall()]
+        return [TableInfo(row[0], row[1][0], None) for row in cursor.fetchall()]
 
-    def get_table_description(self, cursor, table_name):
+    def get_table_description(self, cursor, schema, table_name):
         """
         Return a description of the table with the DB-API cursor.description
         interface.
         """
+        if schema:
+            raise NotImplementedError("No schema support for SQLite")
         cursor.execute('PRAGMA table_info(%s)' % self.connection.ops.quote_name(table_name))
         table_info = cursor.fetchall()
         collations = self._get_column_collations(cursor, table_name)

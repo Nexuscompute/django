@@ -64,13 +64,13 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
             return 'JSONField'
         return field_type
 
-    def get_table_list(self, cursor):
+    def get_table_list(self, cursor, include_schemas=False):
         """Return a list of table and view names in the current database."""
         cursor.execute("SHOW FULL TABLES")
-        return [TableInfo(row[0], {'BASE TABLE': 't', 'VIEW': 'v'}.get(row[1]))
+        return [TableInfo(row[0], {'BASE TABLE': 't', 'VIEW': 'v'}.get(row[1]), None)
                 for row in cursor.fetchall()]
 
-    def get_table_description(self, cursor, table_name):
+    def get_table_description(self, cursor, schema, table_name):
         """
         Return a description of the table with the DB-API cursor.description
         interface."
@@ -102,6 +102,7 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         #   not visible length (#5725)
         # - precision and scale (for decimal fields) (#5014)
         # - auto_increment is not available in cursor.description
+        assert schema is None, "No schema support for MySQL"
         cursor.execute("""
             SELECT
                 column_name, data_type, character_maximum_length,

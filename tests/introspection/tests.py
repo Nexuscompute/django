@@ -70,13 +70,13 @@ class IntrospectionTests(TransactionTestCase):
 
     def test_get_table_description_names(self):
         with connection.cursor() as cursor:
-            desc = connection.introspection.get_table_description(cursor, Reporter._meta.db_table)
+            desc = connection.introspection.get_table_description(cursor, None, Reporter._meta.db_table)
         self.assertEqual([r[0] for r in desc],
                          [f.column for f in Reporter._meta.fields])
 
     def test_get_table_description_types(self):
         with connection.cursor() as cursor:
-            desc = connection.introspection.get_table_description(cursor, Reporter._meta.db_table)
+            desc = connection.introspection.get_table_description(cursor, None, Reporter._meta.db_table)
         self.assertEqual(
             [connection.introspection.get_field_type(r[1], r) for r in desc],
             [
@@ -90,7 +90,7 @@ class IntrospectionTests(TransactionTestCase):
 
     def test_get_table_description_col_lengths(self):
         with connection.cursor() as cursor:
-            desc = connection.introspection.get_table_description(cursor, Reporter._meta.db_table)
+            desc = connection.introspection.get_table_description(cursor, None, Reporter._meta.db_table)
         self.assertEqual(
             [r[3] for r in desc if connection.introspection.get_field_type(r[1], r) == 'CharField'],
             [30, 30, 254]
@@ -98,7 +98,7 @@ class IntrospectionTests(TransactionTestCase):
 
     def test_get_table_description_nullable(self):
         with connection.cursor() as cursor:
-            desc = connection.introspection.get_table_description(cursor, Reporter._meta.db_table)
+            desc = connection.introspection.get_table_description(cursor, None, Reporter._meta.db_table)
         nullable_by_backend = connection.features.interprets_empty_strings_as_nulls
         self.assertEqual(
             [r[6] for r in desc],
@@ -107,7 +107,7 @@ class IntrospectionTests(TransactionTestCase):
 
     def test_bigautofield(self):
         with connection.cursor() as cursor:
-            desc = connection.introspection.get_table_description(cursor, City._meta.db_table)
+            desc = connection.introspection.get_table_description(cursor, None, City._meta.db_table)
         self.assertIn(
             connection.features.introspected_field_types['BigAutoField'],
             [connection.introspection.get_field_type(r[1], r) for r in desc],
@@ -115,7 +115,7 @@ class IntrospectionTests(TransactionTestCase):
 
     def test_smallautofield(self):
         with connection.cursor() as cursor:
-            desc = connection.introspection.get_table_description(cursor, Country._meta.db_table)
+            desc = connection.introspection.get_table_description(cursor, None, Country._meta.db_table)
         self.assertIn(
             connection.features.introspected_field_types['SmallAutoField'],
             [connection.introspection.get_field_type(r[1], r) for r in desc],
@@ -126,7 +126,7 @@ class IntrospectionTests(TransactionTestCase):
     def test_postgresql_real_type(self):
         with connection.cursor() as cursor:
             cursor.execute("CREATE TABLE django_ixn_real_test_table (number REAL);")
-            desc = connection.introspection.get_table_description(cursor, 'django_ixn_real_test_table')
+            desc = connection.introspection.get_table_description(cursor, None, 'django_ixn_real_test_table')
             cursor.execute('DROP TABLE django_ixn_real_test_table;')
         self.assertEqual(connection.introspection.get_field_type(desc[0][1], desc[0]), 'FloatField')
 
