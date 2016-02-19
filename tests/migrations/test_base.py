@@ -61,7 +61,7 @@ class MigrationTestBase(TransactionTestCase):
                 value,
                 any(
                     c["index"]
-                    for c in connections[using].introspection.get_constraints(cursor, table).values()
+                    for c in connections[using].introspection.get_constraints(cursor, None, table).values()
                     if (
                         c['columns'] == list(columns) and
                         (index_type is None or c['type'] == index_type) and
@@ -112,7 +112,7 @@ class MigrationTestBase(TransactionTestCase):
                 value,
                 any(
                     c["foreign_key"] == to
-                    for c in connections[using].introspection.get_constraints(cursor, table).values()
+                    for c in connections[using].introspection.get_constraints(cursor, None, table).values()
                     if c['columns'] == list(columns)
                 ),
             )

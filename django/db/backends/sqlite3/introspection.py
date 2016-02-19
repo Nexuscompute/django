@@ -316,11 +316,12 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                 break
         return constraints
 
-    def get_constraints(self, cursor, table_name):
+    def get_constraints(self, cursor, schema, table_name):
         """
         Retrieve any constraints or keys (unique, pk, fk, check, index) across
         one or more columns.
         """
+        assert schema is None, "No schema support on sqlite3"
         constraints = {}
         # Find inline check constraints.
         try:

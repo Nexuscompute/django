@@ -136,12 +136,13 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         """, [table_name])
         return {row[0]: (row[2], row[1]) for row in cursor.fetchall()}
 
-    def get_constraints(self, cursor, table_name):
+    def get_constraints(self, cursor, schema, table_name):
         """
         Retrieve any constraints or keys (unique, pk, fk, check, index) across
         one or more columns. Also retrieve the definition of expression-based
         indexes.
         """
+        assert schema is None, "Not implemented yet!"
         constraints = {}
         # Loop over the key table, collecting things as constraints. The column
         # array must return column names in the same order in which they were

@@ -6,7 +6,7 @@ from django.db import NotSupportedError
 from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.backends.ddl_references import Statement
 from django.db.backends.utils import strip_quotes
-from django.db.models import UniqueConstraint
+from django.db.models import ModelTable, UniqueConstraint
 from django.db.transaction import atomic
 
 
@@ -266,7 +266,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         body_copy = copy.deepcopy(body)
         meta_contents = {
             'app_label': model._meta.app_label,
-            'db_table': 'new__%s' % strip_quotes(model._meta.db_table),
+            'table_cls': ModelTable('new__%s' % model._meta.table_cls.table),
             'unique_together': unique_together,
             'index_together': index_together,
             'indexes': indexes,
@@ -283,10 +283,10 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
 
         # Copy data from the old table into the new table
         self.execute("INSERT INTO %s (%s) SELECT %s FROM %s" % (
-            self.quote_name(new_model._meta.db_table),
+            self.quote_name(new_model._meta.table_cls.table),
             ', '.join(self.quote_name(x) for x in mapping),
             ', '.join(mapping.values()),
-            self.quote_name(model._meta.db_table),
+            self.quote_name(model._meta.table_cls.table),
         ))
 
         # Delete the old table to make way for the new
@@ -294,7 +294,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
 
         # Rename the new table to take way for the old
         self.alter_db_table(
-            new_model, new_model._meta.db_table, model._meta.db_table,
+            new_model, new_model._meta.table_cls, model._meta.table_cls,
             disable_constraints=False,
         )
 

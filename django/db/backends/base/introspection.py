@@ -163,7 +163,7 @@ class BaseDatabaseIntrospection:
                 return constraint['columns'][0]
         return None
 
-    def get_constraints(self, cursor, table_name):
+    def get_constraints(self, cursor, schema, table_name):
         """
         Retrieve any constraints or keys (unique, pk, fk, check, index)
         across one or more columns.

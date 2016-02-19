@@ -196,11 +196,12 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
                 check_columns.add(token.value[1:-1])
         return check_columns
 
-    def get_constraints(self, cursor, table_name):
+    def get_constraints(self, cursor, schema, table_name):
         """
         Retrieve any constraints or keys (unique, pk, fk, check, index) across
         one or more columns.
         """
+        assert schema is None, "Schema-qualified tables not supported on MySQL"
         constraints = {}
         # Get the actual constraint names and columns
         name_query = """

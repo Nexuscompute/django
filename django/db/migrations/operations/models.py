@@ -320,8 +320,8 @@ class RenameModel(ModelOperation):
         new_model = to_state.apps.get_model(app_label, self.new_name)
         if self.allow_migrate_model(schema_editor.connection.alias, new_model):
             old_model = from_state.apps.get_model(app_label, self.old_name)
-            old_db_table = old_model._meta.db_table
-            new_db_table = new_model._meta.db_table
+            old_db_table = old_model._meta.table_cls
+            new_db_table = new_model._meta.table_cls
             # Don't alter when a table name is not changed.
             if old_db_table == new_db_table:
                 return
@@ -357,8 +357,8 @@ class RenameModel(ModelOperation):
                 new_m2m_model = new_field.remote_field.through
                 schema_editor.alter_db_table(
                     new_m2m_model,
-                    old_m2m_model._meta.db_table,
-                    new_m2m_model._meta.db_table,
+                    old_m2m_model._meta.table_cls,
+                    new_m2m_model._meta.table_cls,
                 )
                 # Rename the column in the M2M table that's based on this
                 # model's name.
@@ -442,16 +442,16 @@ class AlterModelTable(ModelOptionOperation):
             old_model = from_state.apps.get_model(app_label, self.name)
             schema_editor.alter_db_table(
                 new_model,
-                old_model._meta.db_table,
-                new_model._meta.db_table,
+                old_model._meta.table_cls,
+                new_model._meta.table_cls,
             )
             # Rename M2M fields whose name is based on this model's db_table
             for (old_field, new_field) in zip(old_model._meta.local_many_to_many, new_model._meta.local_many_to_many):
                 if new_field.remote_field.through._meta.auto_created:
                     schema_editor.alter_db_table(
                         new_field.remote_field.through,
-                        old_field.remote_field.through._meta.db_table,
-                        new_field.remote_field.through._meta.db_table,
+                        old_field.remote_field.through._meta.table_cls,
+                        new_field.remote_field.through._meta.table_cls,
                     )
 
     def database_backwards(self, app_label, schema_editor, from_state, to_state):

@@ -305,6 +305,7 @@ class MigrationExecutor:
                 )
             )
 
+        # TODO: we need schema-aware introspection for this case.
         if migration.initial is None:
             # Bail if the migration isn't the first one in its app
             if any(app == migration.app_label for app, name in migration.dependencies):

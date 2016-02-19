@@ -830,7 +830,7 @@ class TestMigrations(TransactionTestCase):
         with connection.cursor() as cursor:
             like_constraint_columns_list = [
                 v['columns']
-                for k, v in list(connection.introspection.get_constraints(cursor, table_name).items())
+                for k, v in list(connection.introspection.get_constraints(cursor, None, table_name).items())
                 if k.endswith('_like')
             ]
         # Only the CharField should have a LIKE index.

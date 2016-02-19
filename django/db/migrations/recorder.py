@@ -52,6 +52,7 @@ class MigrationRecorder:
 
     def has_table(self):
         """Return True if the django_migrations table exists."""
+        # TODO: we need schema-aware introspection for this case.
         with self.connection.cursor() as cursor:
             tables = self.connection.introspection.table_names(cursor)
         return self.Migration._meta.db_table in tables

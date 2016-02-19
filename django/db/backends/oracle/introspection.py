@@ -218,11 +218,12 @@ class DatabaseIntrospection(BaseDatabaseIntrospection):
         row = cursor.fetchone()
         return self.identifier_converter(row[0]) if row else None
 
-    def get_constraints(self, cursor, table_name):
+    def get_constraints(self, cursor, schema, table_name):
         """
         Retrieve any constraints or keys (unique, pk, fk, check, index) across
         one or more columns.
         """
+        assert schema is None, "Not implemented yet!"
         constraints = {}
         # Loop over the constraints, getting PKs, uniques, and checks
         cursor.execute("""

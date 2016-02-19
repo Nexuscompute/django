@@ -57,7 +57,7 @@ class BaseDatabaseOperations:
         self.connection = connection
         self._cache = None
 
-    def autoinc_sql(self, table, column):
+    def autoinc_sql(self, schema, table, column):
         """
         Return any SQL needed to support auto-incrementing primary keys, or
         None if no SQL is necessary.

@@ -111,7 +111,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
         elif self._field_data_type(old_field) != self._field_data_type(new_field):
             self.sql_alter_column_type += using_sql
         # Make ALTER TYPE with SERIAL make sense.
-        table = strip_quotes(model._meta.db_table)
+        table = strip_quotes(model._meta.table_sql.table)
         serial_fields_map = {'bigserial': 'bigint', 'serial': 'integer', 'smallserial': 'smallint'}
         if new_type.lower() in serial_fields_map:
             column = strip_quotes(new_field.column)
