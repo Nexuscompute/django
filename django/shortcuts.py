@@ -8,7 +8,6 @@ from django.http import (
 )
 from django.template import loader
 from django.urls import NoReverseMatch, reverse
-from django.utils.encoding import force_text
 from django.utils.functional import Promise
 
 
@@ -130,7 +129,7 @@ def resolve_url(to, *args, **kwargs):
     if isinstance(to, Promise):
         # Expand the lazy instance, as it can cause issues when it is passed
         # further to some Python functions like urlparse.
-        to = force_text(to)
+        to = str(to)
 
     if isinstance(to, str):
         # Handle relative URLs

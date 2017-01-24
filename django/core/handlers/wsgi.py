@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core import signals
 from django.core.handlers import base
 from django.urls import set_script_prefix
-from django.utils.encoding import force_text, repercent_broken_unicode
+from django.utils.encoding import repercent_broken_unicode
 from django.utils.functional import cached_property
 
 ISO_8859_1, UTF_8 = 'iso-8859-1', 'utf-8'
@@ -180,7 +180,7 @@ def get_script_name(environ):
     set (to anything).
     """
     if settings.FORCE_SCRIPT_NAME is not None:
-        return force_text(settings.FORCE_SCRIPT_NAME)
+        return settings.FORCE_SCRIPT_NAME
 
     # If Apache's mod_rewrite had a whack at the URL, Apache set either
     # SCRIPT_URL or REDIRECT_URL to the full resource URL before applying any

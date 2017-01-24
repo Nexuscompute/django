@@ -8,7 +8,6 @@ from django.apps import apps
 from django.conf import settings
 from django.template import Context, Engine
 from django.urls import translate_url
-from django.utils.encoding import force_text
 from django.utils.formats import get_format
 from django.utils.http import is_safe_url
 from django.utils.translation import (
@@ -70,15 +69,14 @@ def get_formats():
         'THOUSAND_SEPARATOR', 'NUMBER_GROUPING',
         'DATE_INPUT_FORMATS', 'TIME_INPUT_FORMATS', 'DATETIME_INPUT_FORMATS'
     )
-    result = {}
-    for attr in FORMAT_SETTINGS:
-        result[attr] = get_format(attr)
     formats = {}
-    for k, v in result.items():
-        if isinstance(v, (int, str)):
-            formats[k] = force_text(v)
-        elif isinstance(v, (tuple, list)):
-            formats[k] = [force_text(value) for value in v]
+    for attr in FORMAT_SETTINGS:
+        value = get_format(attr)
+        if isinstance(value, (tuple, list)):
+            value = [str(v) for v in value]
+        else:
+            value = str(value)
+        formats[attr] = value
     return formats
 
 

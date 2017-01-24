@@ -11,7 +11,6 @@ from django.db.models.sql.constants import QUERY_TERMS
 from django.forms.utils import pretty_name
 from django.urls import NoReverseMatch, reverse
 from django.utils import formats, timezone
-from django.utils.encoding import force_text, smart_text
 from django.utils.html import format_html
 from django.utils.text import capfirst
 from django.utils.translation import (
@@ -137,8 +136,7 @@ def get_deleted_objects(objs, opts, user, admin_site, using):
         has_admin = obj.__class__ in admin_site._registry
         opts = obj._meta
 
-        no_edit_link = '%s: %s' % (capfirst(opts.verbose_name),
-                                   force_text(obj))
+        no_edit_link = '%s: %s' % (capfirst(opts.verbose_name), obj)
 
         if has_admin:
             try:
@@ -250,8 +248,8 @@ def model_format_dict(obj):
     else:
         opts = obj
     return {
-        'verbose_name': force_text(opts.verbose_name),
-        'verbose_name_plural': force_text(opts.verbose_name_plural)
+        'verbose_name': opts.verbose_name,
+        'verbose_name_plural': opts.verbose_name_plural,
     }
 
 
@@ -338,7 +336,7 @@ def label_for_field(name, model, model_admin=None, return_attr=False):
             label = field.related_model._meta.verbose_name
     except FieldDoesNotExist:
         if name == "__str__":
-            label = force_text(model._meta.verbose_name)
+            label = str(model._meta.verbose_name)
             attr = str
         else:
             if callable(name):
@@ -385,7 +383,7 @@ def help_text_for_field(name, model):
     else:
         if hasattr(field, 'help_text'):
             help_text = field.help_text
-    return smart_text(help_text)
+    return help_text
 
 
 def display_for_field(value, field, empty_value_display):
@@ -427,9 +425,9 @@ def display_for_value(value, empty_value_display, boolean=False):
     elif isinstance(value, (int, decimal.Decimal, float)):
         return formats.number_format(value)
     elif isinstance(value, (list, tuple)):
-        return ', '.join(force_text(v) for v in value)
+        return ', '.join(str(v) for v in value)
     else:
-        return force_text(value)
+        return str(value)
 
 
 class NotRelationField(Exception):
@@ -512,23 +510,23 @@ def construct_change_message(form, formsets, add):
                 for added_object in formset.new_objects:
                     change_message.append({
                         'added': {
-                            'name': force_text(added_object._meta.verbose_name),
-                            'object': force_text(added_object),
+                            'name': str(added_object._meta.verbose_name),
+                            'object': str(added_object),
                         }
                     })
                 for changed_object, changed_fields in formset.changed_objects:
                     change_message.append({
                         'changed': {
-                            'name': force_text(changed_object._meta.verbose_name),
-                            'object': force_text(changed_object),
+                            'name': str(changed_object._meta.verbose_name),
+                            'object': str(changed_object),
                             'fields': changed_fields,
                         }
                     })
                 for deleted_object in formset.deleted_objects:
                     change_message.append({
                         'deleted': {
-                            'name': force_text(deleted_object._meta.verbose_name),
-                            'object': force_text(deleted_object),
+                            'name': str(deleted_object._meta.verbose_name),
+                            'object': str(deleted_object),
                         }
                     })
     return change_message

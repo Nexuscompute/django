@@ -12,7 +12,6 @@ from django.forms.fields import Field, FileField
 # pretty_name is imported for backwards compatibility in Django 1.9
 from django.forms.utils import ErrorDict, ErrorList, pretty_name  # NOQA
 from django.forms.widgets import Media, MediaDefiningClass
-from django.utils.encoding import force_text
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, html_safe
 from django.utils.safestring import mark_safe
@@ -210,7 +209,7 @@ class BaseForm:
             if bf.is_hidden:
                 if bf_errors:
                     top_errors.extend(
-                        [_('(Hidden field %(name)s) %(error)s') % {'name': name, 'error': force_text(e)}
+                        [_('(Hidden field %(name)s) %(error)s') % {'name': name, 'error': str(e)}
                          for e in bf_errors])
                 hidden_fields.append(str(bf))
             else:
@@ -221,23 +220,23 @@ class BaseForm:
                     html_class_attr = ' class="%s"' % css_classes
 
                 if errors_on_separate_row and bf_errors:
-                    output.append(error_row % force_text(bf_errors))
+                    output.append(error_row % str(bf_errors))
 
                 if bf.label:
-                    label = conditional_escape(force_text(bf.label))
+                    label = conditional_escape(bf.label)
                     label = bf.label_tag(label) or ''
                 else:
                     label = ''
 
                 if field.help_text:
-                    help_text = help_text_html % force_text(field.help_text)
+                    help_text = help_text_html % field.help_text
                 else:
                     help_text = ''
 
                 output.append(normal_row % {
-                    'errors': force_text(bf_errors),
-                    'label': force_text(label),
-                    'field': str(bf),
+                    'errors': bf_errors,
+                    'label': label,
+                    'field': bf,
                     'help_text': help_text,
                     'html_class_attr': html_class_attr,
                     'css_classes': css_classes,
@@ -245,7 +244,7 @@ class BaseForm:
                 })
 
         if top_errors:
-            output.insert(0, error_row % force_text(top_errors))
+            output.insert(0, error_row % top_errors)
 
         if hidden_fields:  # Insert any hidden fields in the last row.
             str_hidden = ''.join(hidden_fields)

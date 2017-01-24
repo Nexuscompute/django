@@ -5,7 +5,6 @@ from urllib.parse import urlsplit, urlunsplit
 
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
-from django.utils.encoding import force_text
 from django.utils.functional import SimpleLazyObject
 from django.utils.ipv6 import is_valid_ipv6_address
 from django.utils.translation import ugettext_lazy as _, ungettext_lazy
@@ -55,8 +54,7 @@ class RegexValidator:
         Validates that the input matches the regular expression
         if inverse_match is False, otherwise raises ValidationError.
         """
-        if not (self.inverse_match is not bool(self.regex.search(
-                force_text(value)))):
+        if not self.inverse_match is not bool(self.regex.search(str(value))):
             raise ValidationError(self.message, code=self.code)
 
     def __eq__(self, other):
@@ -108,7 +106,6 @@ class URLValidator(RegexValidator):
             self.schemes = schemes
 
     def __call__(self, value):
-        value = force_text(value)
         # Check first if the scheme is valid
         scheme = value.split('://')[0].lower()
         if scheme not in self.schemes:
@@ -188,8 +185,6 @@ class EmailValidator:
             self.domain_whitelist = whitelist
 
     def __call__(self, value):
-        value = force_text(value)
-
         if not value or '@' not in value:
             raise ValidationError(self.message, code=self.code)
 

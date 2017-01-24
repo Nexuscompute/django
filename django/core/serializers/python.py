@@ -6,7 +6,6 @@ other serializers.
 from collections import OrderedDict
 
 from django.apps import apps
-from django.conf import settings
 from django.core.serializers import base
 from django.db import DEFAULT_DB_ALIAS, models
 from django.utils.encoding import force_text, is_protected_type
@@ -34,7 +33,7 @@ class Serializer(base.Serializer):
         self._current = None
 
     def get_dump_object(self, obj):
-        data = OrderedDict([('model', force_text(obj._meta))])
+        data = OrderedDict([('model', str(obj._meta))])
         if not self.use_natural_primary_keys or not hasattr(obj, 'natural_key'):
             data["pk"] = force_text(obj._get_pk_val(), strings_only=True)
         data['fields'] = self._current
@@ -115,11 +114,6 @@ def Deserializer(object_list, *, using=DEFAULT_DB_ALIAS, ignorenonexistent=False
             if ignorenonexistent and field_name not in field_names:
                 # skip fields no longer on model
                 continue
-
-            if isinstance(field_value, str):
-                field_value = force_text(
-                    field_value, options.get("encoding", settings.DEFAULT_CHARSET), strings_only=True
-                )
 
             field = Model._meta.get_field(field_name)
 

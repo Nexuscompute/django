@@ -7,7 +7,6 @@ from django import forms
 from django.db.models.deletion import CASCADE
 from django.urls import reverse
 from django.urls.exceptions import NoReverseMatch
-from django.utils.encoding import force_text
 from django.utils.html import smart_urlquote
 from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
@@ -215,7 +214,7 @@ class ManyToManyRawIdWidget(ForeignKeyRawIdWidget):
             return value.split(',')
 
     def format_value(self, value):
-        return ','.join(force_text(v) for v in value) if value else ''
+        return ','.join(str(v) for v in value) if value else ''
 
 
 class RelatedFieldWidgetWrapper(forms.Widget):
@@ -344,10 +343,6 @@ class AdminURLFieldWidget(forms.URLInput):
         context['change_label'] = _('Change:')
         context['widget']['href'] = smart_urlquote(context['widget']['value'])
         return context
-
-    def format_value(self, value):
-        value = super().format_value(value)
-        return force_text(value)
 
 
 class AdminIntegerFieldWidget(forms.NumberInput):

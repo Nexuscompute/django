@@ -1,6 +1,5 @@
 from django import http
 from django.template import Context, Engine, TemplateDoesNotExist, loader
-from django.utils.encoding import force_text
 from django.views.decorators.csrf import requires_csrf_token
 
 ERROR_404_TEMPLATE_NAME = '404.html'
@@ -114,5 +113,5 @@ def permission_denied(request, exception, template_name=ERROR_403_TEMPLATE_NAME)
             raise
         return http.HttpResponseForbidden('<h1>403 Forbidden</h1>', content_type='text/html')
     return http.HttpResponseForbidden(
-        template.render(request=request, context={'exception': force_text(exception)})
+        template.render(request=request, context={'exception': str(exception)})
     )

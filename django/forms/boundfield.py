@@ -4,7 +4,6 @@ import warnings
 from django.forms.utils import flatatt, pretty_name
 from django.forms.widgets import Textarea, TextInput
 from django.utils.deprecation import RemovedInDjango21Warning
-from django.utils.encoding import force_text
 from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, format_html, html_safe
 from django.utils.inspect import func_supports_parameter
@@ -109,13 +108,12 @@ class BoundField:
                 'It will be mandatory in Django 2.1.' % widget.__class__,
                 RemovedInDjango21Warning, stacklevel=2,
             )
-        html = widget.render(
+        return widget.render(
             name=name,
             value=self.value(),
             attrs=attrs,
             **kwargs
         )
-        return force_text(html)
 
     def as_text(self, attrs=None, **kwargs):
         """
@@ -211,9 +209,9 @@ class BoundField:
         Calculates and returns the ID attribute for this BoundField, if the
         associated Form has specified auto_id. Returns an empty string otherwise.
         """
-        auto_id = self.form.auto_id
-        if auto_id and '%s' in force_text(auto_id):
-            return force_text(auto_id) % self.html_name
+        auto_id = self.form.auto_id  # Boolean or string
+        if auto_id and '%s' in str(auto_id):
+            return auto_id % self.html_name
         elif auto_id:
             return self.html_name
         return ''

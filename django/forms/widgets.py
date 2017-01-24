@@ -13,7 +13,6 @@ from django.forms.utils import to_current_timezone
 from django.templatetags.static import static
 from django.utils import datetime_safe, formats
 from django.utils.dates import MONTHS
-from django.utils.encoding import force_text
 from django.utils.formats import get_format
 from django.utils.html import format_html, html_safe
 from django.utils.safestring import mark_safe
@@ -185,7 +184,7 @@ class Widget(metaclass=MediaDefiningClass):
             value = ''
         if self.is_localized:
             return formats.localize_input(value)
-        return force_text(value)
+        return str(value)
 
     def get_context(self, name, value, attrs=None):
         context = {}
@@ -478,7 +477,7 @@ class CheckboxInput(Input):
         """Only return the 'value' attribute if value isn't empty."""
         if value is True or value is False or value is None or value == '':
             return
-        return force_text(value)
+        return str(value)
 
     def get_context(self, name, value, attrs=None):
         if self.check_test(value):
@@ -567,7 +566,7 @@ class ChoiceWidget(Widget):
 
             for subvalue, sublabel in choices:
                 selected = (
-                    force_text(subvalue) in value and
+                    str(subvalue) in value and
                     (has_selected is False or self.allow_multiple_selected)
                 )
                 if selected is True and has_selected is False:
@@ -640,7 +639,7 @@ class ChoiceWidget(Widget):
             if v is None:
                 values.add('')
             else:
-                values.add(force_text(v))
+                values.add(str(v))
         return values
 
 

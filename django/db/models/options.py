@@ -15,7 +15,6 @@ from django.db.models.fields.related import OneToOneField
 from django.db.models.query_utils import PathInfo
 from django.utils.datastructures import ImmutableList, OrderedSet
 from django.utils.deprecation import RemovedInDjango21Warning
-from django.utils.encoding import force_text
 from django.utils.functional import cached_property
 from django.utils.text import camel_case_to_spaces, format_lazy
 from django.utils.translation import override
@@ -326,7 +325,7 @@ class Options:
         locale).
         """
         with override(None):
-            return force_text(self.verbose_name)
+            return str(self.verbose_name)
 
     @property
     def swapped(self):

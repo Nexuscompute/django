@@ -4,7 +4,6 @@ import unicodedata
 from gzip import GzipFile
 from io import BytesIO
 
-from django.utils.encoding import force_text
 from django.utils.functional import (
     SimpleLazyObject, keep_lazy, keep_lazy_text, lazy,
 )
@@ -15,7 +14,7 @@ from django.utils.translation import pgettext, ugettext as _, ugettext_lazy
 @keep_lazy_text
 def capfirst(x):
     """Capitalize the first letter of a string."""
-    return x and force_text(x)[0].upper() + force_text(x)[1:]
+    return x and str(x)[0].upper() + str(x)[1:]
 
 
 # Set up regular expressions
@@ -38,8 +37,6 @@ def wrap(text, width):
     Long words are not wrapped, so the output text may have lines longer than
     ``width``.
     """
-    text = force_text(text)
-
     def _generator():
         for line in text.splitlines(True):  # True keeps trailing linebreaks
             max_width = min((line.endswith('\n') and width + 1 or width), width)
@@ -64,14 +61,13 @@ class Truncator(SimpleLazyObject):
     An object used to truncate text, either by characters or words.
     """
     def __init__(self, text):
-        super().__init__(lambda: force_text(text))
+        super().__init__(lambda: str(text))
 
     def add_truncation_text(self, text, truncate=None):
         if truncate is None:
             truncate = pgettext(
                 'String to return when truncating text',
                 '%(truncated_text)s...')
-        truncate = force_text(truncate)
         if '%(truncated_text)s' in truncate:
             return truncate % {'truncated_text': text}
         # The truncation text didn't contain the %(truncated_text)s string
@@ -235,7 +231,7 @@ def get_valid_filename(s):
     >>> get_valid_filename("john's portrait in 2004.jpg")
     'johns_portrait_in_2004.jpg'
     """
-    s = force_text(s).strip().replace(' ', '_')
+    s = str(s).strip().replace(' ', '_')
     return re.sub(r'(?u)[^-\w.]', '', s)
 
 
@@ -256,18 +252,17 @@ def get_text_list(list_, last_word=ugettext_lazy('or')):
     if len(list_) == 0:
         return ''
     if len(list_) == 1:
-        return force_text(list_[0])
+        return str(list_[0])
     return '%s %s %s' % (
         # Translators: This string is used as a separator between list elements
-        _(', ').join(force_text(i) for i in list_[:-1]),
-        force_text(last_word), force_text(list_[-1]))
+        _(', ').join(str(i) for i in list_[:-1]), str(last_word), str(list_[-1])
+    )
 
 
 @keep_lazy_text
 def normalize_newlines(text):
     """Normalizes CRLF and CR newlines to just LF."""
-    text = force_text(text)
-    return re_newlines.sub('\n', text)
+    return re_newlines.sub('\n', str(text))
 
 
 @keep_lazy_text
@@ -354,8 +349,7 @@ def smart_split(text):
     >>> list(smart_split(r'A "\"funky\" style" test.'))
     ['A', '"\\"funky\\" style"', 'test.']
     """
-    text = force_text(text)
-    for bit in smart_split_re.finditer(text):
+    for bit in smart_split_re.finditer(str(text)):
         yield bit.group(0)
 
 
@@ -383,7 +377,7 @@ _entity_re = re.compile(r"&(#?[xX]?(?:[0-9a-fA-F]+|\w{1,8}));")
 
 @keep_lazy_text
 def unescape_entities(text):
-    return _entity_re.sub(_replace_entity, force_text(text))
+    return _entity_re.sub(_replace_entity, str(text))
 
 
 @keep_lazy_text
@@ -414,7 +408,7 @@ def slugify(value, allow_unicode=False):
     Remove characters that aren't alphanumerics, underscores, or hyphens.
     Convert to lowercase. Also strip leading and trailing whitespace.
     """
-    value = force_text(value)
+    value = str(value)
     if allow_unicode:
         value = unicodedata.normalize('NFKC', value)
         value = re.sub(r'[^\w\s-]', '', value).strip().lower()

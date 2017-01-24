@@ -8,7 +8,6 @@ from django.core.exceptions import PermissionDenied, SuspiciousOperation
 from django.http import Http404
 from django.http.multipartparser import MultiPartParserError
 from django.urls import get_resolver, get_urlconf
-from django.utils.encoding import force_text
 from django.views import debug
 
 logger = logging.getLogger('django.request')
@@ -63,7 +62,7 @@ def response_for_exception(request, exc):
         # The security logger receives events for all SuspiciousOperations
         security_logger = logging.getLogger('django.security.%s' % exc.__class__.__name__)
         security_logger.error(
-            force_text(exc),
+            str(exc),
             extra={'status_code': 400, 'request': request},
         )
         if settings.DEBUG:
