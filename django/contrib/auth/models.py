@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import models
+from django.db.models.base import ModelBase
 from django.db.models.manager import EmptyManager
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
@@ -291,7 +292,27 @@ class PermissionsMixin(models.Model):
         return _user_has_module_perms(self, app_label)
 
 
-class AbstractUser(AbstractBaseUser, PermissionsMixin):
+class CustomValidatorBase(ModelBase):
+    """
+    A metaclass to change the validators if the class `username_validator` is
+    different from AbstractUser.username_validator.
+    """
+    def __new__(cls, name, bases, attrs):
+        new_class = super().__new__(cls, name, bases, attrs)
+        username_field = new_class._meta.get_field('username')
+        if new_class.username_validator in username_field.validators:
+            return new_class
+        # Replace any base username_validator by this class username validator.
+        base_validators = [
+            base.username_validator for base in bases if hasattr(base, 'username_validator')
+        ]
+        for idx, validator in enumerate(username_field.validators):
+            if validator in base_validators:
+                username_field.validators[idx] = new_class.username_validator
+        return new_class
+
+
+class AbstractUser(AbstractBaseUser, PermissionsMixin, metaclass=CustomValidatorBase):
     """
     An abstract base class implementing a fully featured User model with
     admin-compliant permissions.

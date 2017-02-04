@@ -14,6 +14,8 @@ from django.db import models
 from django.test import TestCase, override_settings
 from django.test.utils import isolate_apps
 
+from .models import CustomValidatorUser
+
 
 @override_settings(AUTH_PASSWORD_VALIDATORS=[
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
@@ -228,3 +230,16 @@ class UsernameValidatorsTests(TestCase):
         for invalid in invalid_usernames:
             with self.assertRaises(ValidationError):
                 v(invalid)
+
+    def test_custom_validator(self):
+        """
+        CustomValidatorUser accepts usernames with numbers only.
+        """
+        user = CustomValidatorUser.objects.create_user('13579')
+        self.assertIsNone(user.full_clean())
+
+        user = CustomValidatorUser.objects.create_user('abcdef')
+        with self.assertRaises(ValidationError) as cm:
+            user.full_clean()
+        expected_msg = 'Enter a valid username. This value may contain only numbers.'
+        self.assertEqual(cm.exception.messages, [expected_msg])
