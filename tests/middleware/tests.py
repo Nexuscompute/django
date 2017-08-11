@@ -12,6 +12,7 @@ from django.http import (
     FileResponse, HttpRequest, HttpResponse, HttpResponseNotFound,
     HttpResponsePermanentRedirect, HttpResponseRedirect, StreamingHttpResponse,
 )
+from django.http.response import HttpResponseBase
 from django.middleware.clickjacking import XFrameOptionsMiddleware
 from django.middleware.common import (
     BrokenLinkEmailsMiddleware, CommonMiddleware,
@@ -319,7 +320,11 @@ class CommonMiddlewareTest(SimpleTestCase):
     # Tests for the Content-Length header
 
     def test_content_length_header_added(self):
-        response = HttpResponse('content')
+        class CustomHttpResponse(HttpResponseBase):
+            streaming = False
+            content = b'blah'
+
+        response = CustomHttpResponse('content')
         self.assertNotIn('Content-Length', response)
         response = CommonMiddleware().process_response(HttpRequest(), response)
         self.assertEqual(int(response['Content-Length']), len(response.content))

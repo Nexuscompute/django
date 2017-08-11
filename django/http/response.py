@@ -310,12 +310,14 @@ class HttpResponse(HttpResponseBase):
             content = self.make_bytes(value)
         # Create a list of properly encoded bytestrings to support write().
         self._container = [content]
+        self['Content-Length'] = str(len(content))
 
     def __iter__(self):
         return iter(self._container)
 
     def write(self, content):
         self._container.append(self.make_bytes(content))
+        self['Content-Length'] = str(int(self['Content-Length']) + len(self._container[-1]))
 
     def tell(self):
         return len(self.content)

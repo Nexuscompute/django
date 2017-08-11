@@ -304,6 +304,7 @@ class HttpResponseTests(unittest.TestCase):
         # them to contain ASCII
         r = HttpResponse()
         del r['Content-Type']
+        del r['Content-Length']
         r['foo'] = 'bar'
         headers = list(r.items())
         self.assertEqual(len(headers), 1)
@@ -311,6 +312,7 @@ class HttpResponseTests(unittest.TestCase):
 
         r = HttpResponse()
         del r['Content-Type']
+        del r['Content-Length']
         r[b'foo'] = 'bar'
         headers = list(r.items())
         self.assertEqual(len(headers), 1)

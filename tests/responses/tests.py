@@ -127,6 +127,14 @@ class HttpResponseTests(SimpleTestCase):
         response = HttpResponse(iso_content, content_type='text/plain')
         self.assertContains(response, iso_content)
 
+    def test_response_content_length(self):
+        self.assertEqual(HttpResponse()['Content-Length'], '0')
+        self.assertEqual(HttpResponse(b'123456789')['Content-Length'], '9')
+        self.assertEqual(HttpResponse('Café')['Content-Length'], '5')
+        response = HttpResponse('1234')
+        response.write('5678')
+        self.assertEqual(response['Content-Length'], '8')
+
     def test_repr(self):
         response = HttpResponse(content="Café :)".encode(UTF8), status=201)
         expected = '<HttpResponse status_code=201, "text/html; charset=utf-8">'
