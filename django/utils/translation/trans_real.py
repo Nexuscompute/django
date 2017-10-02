@@ -461,7 +461,7 @@ def get_language_from_path(path, strict=False):
         return None
 
 
-def get_language_from_request(request, check_path=False):
+def get_language_from_request(request, check_path=False, fallback=None):
     """
     Analyze the request to find what language the user wants the system to
     show. Only languages listed in settings.LANGUAGES are taken into account.
@@ -504,9 +504,9 @@ def get_language_from_request(request, check_path=False):
             continue
 
     try:
-        return get_supported_language_variant(settings.LANGUAGE_CODE)
+        return get_supported_language_variant(fallback or settings.LANGUAGE_CODE)
     except LookupError:
-        return settings.LANGUAGE_CODE
+        return fallback or settings.LANGUAGE_CODE
 
 
 def parse_accept_lang_header(lang_string):

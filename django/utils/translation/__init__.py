@@ -197,8 +197,8 @@ def to_locale(language):
     return _trans.to_locale(language)
 
 
-def get_language_from_request(request, check_path=False):
-    return _trans.get_language_from_request(request, check_path)
+def get_language_from_request(request, check_path=False, fallback=None):
+    return _trans.get_language_from_request(request, check_path, fallback=fallback)
 
 
 def get_language_from_path(path):
