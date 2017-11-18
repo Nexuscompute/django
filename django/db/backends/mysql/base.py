@@ -334,6 +334,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
             return True
 
     @cached_property
+    def mysql_flavor(self):
+        return 'mariadb' if self.mysql_version >= (10, 0, 0) else 'mysql'
+
+    @cached_property
     def mysql_version(self):
         with self.temporary_connection() as cursor:
             cursor.execute('SELECT VERSION()')

@@ -79,7 +79,7 @@ class DatabaseFeatures(BaseDatabaseFeatures):
 
     @cached_property
     def supports_over_clause(self):
-        return self.connection.mysql_version >= (8, 0, 2)
+        return self.connection.mysql_flavor == 'mariadb'
 
     @cached_property
     def supports_transactions(self):

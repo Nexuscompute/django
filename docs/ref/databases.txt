@@ -270,13 +270,13 @@ non-durable <https://www.postgresql.org/docs/current/static/non-durability.html>
 
 .. _mysql-notes:
 
-MySQL notes
-===========
+MySQL/MariaDB notes
+===================
 
 Version support
 ---------------
 
-Django supports MySQL 5.6 and higher.
+Django supports MySQL 5.6 and higher, or MariaDB 10.0 and higher.
 
 Django's ``inspectdb`` feature uses the ``information_schema`` database, which
 contains detailed data on all database schemas.

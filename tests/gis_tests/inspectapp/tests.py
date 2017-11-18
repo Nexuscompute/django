@@ -135,8 +135,10 @@ class OGRInspectTest(TestCase):
         # The ordering of model fields might vary depending on several factors (version of GDAL, etc.)
         self.assertIn('    f_decimal = models.DecimalField(max_digits=0, decimal_places=0)', model_def)
         self.assertIn('    f_int = models.IntegerField()', model_def)
-        self.assertIn('    f_datetime = models.DateTimeField()', model_def)
-        self.assertIn('    f_time = models.TimeField()', model_def)
+        if connection.vendor != 'mysql' or connection.mysql_flavor != 'mariadb':
+            # Probably a bug between GDAL and MariaDB on time fields.
+            self.assertIn('    f_datetime = models.DateTimeField()', model_def)
+            self.assertIn('    f_time = models.TimeField()', model_def)
         self.assertIn('    f_float = models.FloatField()', model_def)
         self.assertIn('    f_char = models.CharField(max_length=10)', model_def)
         self.assertIn('    f_date = models.DateField()', model_def)

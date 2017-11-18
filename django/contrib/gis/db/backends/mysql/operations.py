@@ -20,10 +20,6 @@ class MySQLOperations(BaseSpatialOperations, DatabaseOperations):
     Adapter = WKTAdapter
 
     @cached_property
-    def is_mysql_5_6(self):
-        return self.connection.mysql_version < (5, 7, 6)
-
-    @cached_property
     def select(self):
         return self.geom_func_prefix + 'AsBinary(%s)'
 
@@ -33,7 +29,9 @@ class MySQLOperations(BaseSpatialOperations, DatabaseOperations):
 
     @cached_property
     def gis_operators(self):
-        MBREquals = 'MBREqual' if self.is_mysql_5_6 else 'MBREquals'
+        MBREquals = 'MBREqual' if (
+            self.connection.mysql_flavor == 'mariadb' or self.connection.mysql_version < (5, 7, 6)
+        ) else 'MBREquals'
         return {
             'bbcontains': SpatialOperator(func='MBRContains'),  # For consistency w/PostGIS API
             'bboverlaps': SpatialOperator(func='MBROverlaps'),  # ...
@@ -62,8 +60,12 @@ class MySQLOperations(BaseSpatialOperations, DatabaseOperations):
             'PointOnSurface', 'Reverse', 'Scale', 'SnapToGrid', 'Transform',
             'Translate',
         }
-        if self.connection.mysql_version < (5, 7, 5):
+        if self.connection.mysql_flavor == 'mysql' and self.connection.mysql_version < (5, 7, 5):
             unsupported.update({'AsGeoJSON', 'GeoHash', 'IsValid'})
+        elif self.connection.mysql_flavor == 'mariadb':
+            unsupported.update({'GeoHash', 'IsValid'})
+            if self.connection.mysql_version < (10, 2, 4):
+                unsupported.add('AsGeoJSON')
         return unsupported
 
     def geo_db_type(self, f):
