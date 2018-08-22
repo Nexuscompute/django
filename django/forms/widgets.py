@@ -65,7 +65,7 @@ class Media:
             format_html(
                 '<script type="text/javascript" src="{}"></script>',
                 self.absolute_path(path)
-            ) for path in self._js
+            ) if isinstance(path, str) else str(path) for path in self._js
         ]
 
     def render_css(self):
@@ -76,7 +76,7 @@ class Media:
             format_html(
                 '<link href="{}" type="text/css" media="{}" rel="stylesheet">',
                 self.absolute_path(path), medium
-            ) for path in self._css[medium]
+            ) if isinstance(path, str) else path.render(media=medium) for path in self._css[medium]
         ] for medium in media)
 
     def absolute_path(self, path):

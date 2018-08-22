@@ -1,3 +1,4 @@
+from django.core.assets import CSS, JS
 from django.forms import CharField, Form, Media, MultiWidget, TextInput
 from django.template import Context, Template
 from django.test import SimpleTestCase, override_settings
@@ -12,21 +13,29 @@ class FormsMediaTestCase(SimpleTestCase):
     def test_construction(self):
         # Check construction of media objects
         m = Media(
-            css={'all': ('path/to/css1', '/path/to/css2')},
-            js=('/path/to/js1', 'http://media.other.com/path/to/js2', 'https://secure.other.com/path/to/js3'),
+            css={'all': ('path/to/css1', '/path/to/css2', CSS('path/to/css3'))},
+            js=(
+                '/path/to/js1',
+                JS('path/to/js1b'),
+                'http://media.other.com/path/to/js2',
+                'https://secure.other.com/path/to/js3',
+            ),
         )
         self.assertEqual(
             str(m),
             """<link href="http://media.example.com/static/path/to/css1" type="text/css" media="all" rel="stylesheet">
 <link href="/path/to/css2" type="text/css" media="all" rel="stylesheet">
+<link href="http://media.example.com/static/path/to/css3" type="text/css" rel="stylesheet" media="all">
 <script type="text/javascript" src="/path/to/js1"></script>
+<script src="http://media.example.com/static/path/to/js1b"></script>
 <script type="text/javascript" src="http://media.other.com/path/to/js2"></script>
 <script type="text/javascript" src="https://secure.other.com/path/to/js3"></script>"""
         )
         self.assertEqual(
             repr(m),
-            "Media(css={'all': ('path/to/css1', '/path/to/css2')}, "
-            "js=('/path/to/js1', 'http://media.other.com/path/to/js2', 'https://secure.other.com/path/to/js3'))"
+            "Media(css={'all': ('path/to/css1', '/path/to/css2', 'path/to/css3')}, "
+            "js=('/path/to/js1', 'path/to/js1b', 'http://media.other.com/path/to/js2', "
+            "'https://secure.other.com/path/to/js3'))"
         )
 
         class Foo:
@@ -104,14 +113,14 @@ class FormsMediaTestCase(SimpleTestCase):
         class MyWidget2(TextInput):
             class Media:
                 css = {
-                    'all': ('/path/to/css2', '/path/to/css3')
+                    'all': ('/path/to/css2', '/path/to/css3', CSS('/path/to/css4'))
                 }
                 js = ('/path/to/js1', '/path/to/js4')
 
         class MyWidget3(TextInput):
             class Media:
                 css = {
-                    'all': ('path/to/css1', '/path/to/css3')
+                    'all': ('path/to/css1', '/path/to/css3', CSS('/path/to/css4'))
                 }
                 js = ('/path/to/js1', '/path/to/js4')
 
@@ -123,6 +132,7 @@ class FormsMediaTestCase(SimpleTestCase):
             """<link href="http://media.example.com/static/path/to/css1" type="text/css" media="all" rel="stylesheet">
 <link href="/path/to/css2" type="text/css" media="all" rel="stylesheet">
 <link href="/path/to/css3" type="text/css" media="all" rel="stylesheet">
+<link href="/path/to/css4" type="text/css" rel="stylesheet" media="all">
 <script type="text/javascript" src="/path/to/js1"></script>
 <script type="text/javascript" src="http://media.other.com/path/to/js2"></script>
 <script type="text/javascript" src="https://secure.other.com/path/to/js3"></script>
@@ -517,6 +527,23 @@ class FormsMediaTestCase(SimpleTestCase):
 <link href="/path/to/css2" type="text/css" media="all" rel="stylesheet">
 <link href="/path/to/css3" type="text/css" media="all" rel="stylesheet">
 <link href="/some/form/css" type="text/css" media="all" rel="stylesheet">"""
+        )
+
+    def test_subresource_integrity(self):
+        m = Media(
+            css={'all': (CSS(
+                'https://secure.other.com/path/to/css',
+                integrity='sha256-wtS0hbvzrNSLdCYuvTP9Z70ousIWjGcS3Z8tyOMOJ6s='
+            ),)},
+            js=(JS(
+                'https://secure.other.com/path/to/js',
+                integrity='sha256-SHxbQP766osOPjQEmP6ZDvz4bTEEwg8BKts3ipPVxxQ='
+            ),),
+        )
+        self.assertHTMLEqual(
+            str(m),
+            """<link href="https://secure.other.com/path/to/css" type="text/css" rel="stylesheet" media="all" integrity="sha256-wtS0hbvzrNSLdCYuvTP9Z70ousIWjGcS3Z8tyOMOJ6s=" crossorigin="anonymous">
+<script crossorigin="anonymous" integrity="sha256-SHxbQP766osOPjQEmP6ZDvz4bTEEwg8BKts3ipPVxxQ=" src="https://secure.other.com/path/to/js"></script>"""
         )
 
     def test_html_safe(self):
