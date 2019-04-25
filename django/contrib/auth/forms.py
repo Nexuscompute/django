@@ -73,7 +73,7 @@ class UserCreationForm(forms.ModelForm):
     password.
     """
     error_messages = {
-        'password_mismatch': _("The two password fields didn't match."),
+        'password_mismatch': _("The two password fields didn’t match."),
     }
     password1 = forms.CharField(
         label=_("Password"),
@@ -132,7 +132,7 @@ class UserChangeForm(forms.ModelForm):
         label=_("Password"),
         help_text=_(
             "Raw passwords are not stored, so there is no way to see this "
-            "user's password, but you can change the password using "
+            "user’s password, but you can change the password using "
             "<a href=\"{}\">this form</a>."
         ),
     )
@@ -307,7 +307,7 @@ class SetPasswordForm(forms.Form):
     password
     """
     error_messages = {
-        'password_mismatch': _("The two password fields didn't match."),
+        'password_mismatch': _("The two password fields didn’t match."),
     }
     new_password1 = forms.CharField(
         label=_("New password"),
@@ -380,7 +380,7 @@ class AdminPasswordChangeForm(forms.Form):
     A form used to change the password of a user in the admin interface.
     """
     error_messages = {
-        'password_mismatch': _("The two password fields didn't match."),
+        'password_mismatch': _("The two password fields didn’t match."),
     }
     required_css_class = 'required'
     password1 = forms.CharField(
