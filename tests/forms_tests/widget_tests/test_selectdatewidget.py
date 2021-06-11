@@ -1,10 +1,9 @@
 from datetime import date
 
 from django.forms import DateField, Form, SelectDateWidget
-from django.test import ignore_warnings, override_settings
+from django.test import override_settings
 from django.utils import translation
 from django.utils.dates import MONTHS_AP
-from django.utils.deprecation import RemovedInDjango50Warning
 
 from .base import WidgetTest
 
@@ -485,12 +484,7 @@ class SelectDateWidgetTest(WidgetTest):
             '13-08-0001',
         )
 
-    # RemovedInDjango50Warning: When the deprecation ends, remove
-    # @ignore_warnings and USE_L10N=False. The test should remain because
-    # format-related settings will take precedence over locale-dictated
-    # formats.
-    @ignore_warnings(category=RemovedInDjango50Warning)
-    @override_settings(USE_L10N=False, DATE_INPUT_FORMATS=['%d.%m.%Y'])
+    @override_settings(DATE_INPUT_FORMATS=['%d.%m.%Y'])
     def test_custom_input_format(self):
         w = SelectDateWidget(years=('0001', '1899', '2009', '2010'))
         for values, expected_value in (
