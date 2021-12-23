@@ -331,6 +331,10 @@ Miscellaneous
   ``request.META['CSRF_COOKIE']`` for storing the unmasked CSRF secret rather
   than a masked version. This is an undocumented, private API.
 
+* ``formset:added`` and ``formset:removed`` JavaScript events are now pure
+  JavaScript events and don't depend on jQuery. See
+  :doc:`/ref/contrib/admin/javascript` for more details on the change.
+
 .. _deprecated-features-4.1:
 
 Features deprecated in 4.1
